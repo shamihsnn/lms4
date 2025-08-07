@@ -11,6 +11,22 @@ interface User {
 export function useAuth() {
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+        if (response.status === 401) {
+          return null;
+        }
+        if (!response.ok) {
+          throw new Error(`${response.status}: ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        return null;
+      }
+    },
     retry: false,
     refetchOnWindowFocus: false,
   });

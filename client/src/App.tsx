@@ -19,35 +19,7 @@ import ElectrolytesTest from "@/pages/tests/electrolytes";
 import Sidebar from "@/components/layout/sidebar";
 import NotFound from "@/pages/not-found";
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-cyan-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Login />;
-  }
-
-  return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar />
-      <div className="flex-1 ml-64">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Router() {
+function AppContent() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -93,7 +65,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <AppContent />
       </TooltipProvider>
     </QueryClientProvider>
   );
