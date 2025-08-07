@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +66,7 @@ export default function LipidTest() {
   });
 
   // Set initial test ID when component loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (nextIdData?.nextId && !formData.testId) {
       setFormData(prev => ({ ...prev, testId: nextIdData.nextId }));
     }

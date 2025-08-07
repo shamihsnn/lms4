@@ -1,6 +1,6 @@
 import { type AdminUser, type InsertAdminUser, type Patient, type InsertPatient, type Test, type InsertTest, type IdChangeLog, type InsertIdChangeLog } from "@shared/schema";
 import { randomUUID } from "crypto";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
   // Admin users
@@ -131,6 +131,12 @@ export class MemStorage implements IStorage {
       id,
       createdAt: new Date(),
       lastModified: new Date(),
+      address: insertPatient.address ?? null,
+      age: insertPatient.age ?? null,
+      gender: insertPatient.gender ?? null,
+      phone: insertPatient.phone ?? null,
+      createdBy: insertPatient.createdBy ?? null,
+      modifiedBy: insertPatient.modifiedBy ?? null,
     };
     this.patients.set(id, patient);
     return patient;
@@ -212,6 +218,13 @@ export class MemStorage implements IStorage {
       id,
       createdAt: new Date(),
       lastModified: new Date(),
+      status: insertTest.status ?? null,
+      patientId: insertTest.patientId ?? null,
+      flags: insertTest.flags ?? null,
+      testDate: insertTest.testDate ?? null,
+      testTime: insertTest.testTime ?? null,
+      performedBy: insertTest.performedBy ?? null,
+      modifiedBy: insertTest.modifiedBy ?? null,
     };
     this.tests.set(id, test);
     return test;
@@ -276,6 +289,8 @@ export class MemStorage implements IStorage {
       ...insertLog,
       id,
       changedAt: new Date(),
+      changedBy: insertLog.changedBy ?? null,
+      reason: insertLog.reason ?? null,
     };
     this.idChangeLogs.set(id, log);
     return log;
