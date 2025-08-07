@@ -1,0 +1,153 @@
+Create a Professional Laboratory Management System with secure admin authentication, editable IDs with password protection, and robust printing capabilities.
+
+AUTHENTICATION SYSTEM:
+- Cool, modern admin login page with professional medical theme
+- Username and password authentication
+- "Change Password" option (requires current password verification)
+- Secure session management
+- Login form validation and error messages
+- Professional loading animations
+- "Remember Me" functionality
+- Password strength requirements for changes
+
+LOGIN PAGE DESIGN:
+- Modern gradient background with medical colors (blue/teal theme)
+- Centered login card with subtle shadows and animations
+- Lab equipment icons or medical symbols
+- Smooth hover effects and transitions
+- Responsive design for all devices
+- Professional typography
+- "Laboratory Management System" branding
+
+ID MANAGEMENT SYSTEM (Auto-Generated + Editable):
+Patient ID System:
+- Auto-generated format: PAT001, PAT002, PAT003, etc.
+- "Edit ID" button next to Patient ID field
+- Clicking "Edit ID" triggers password verification modal
+- After correct password entry, ID becomes editable
+- Real-time validation to ensure ID uniqueness
+- Confirmation dialog before saving new ID
+- Audit log for ID changes (who, when, old ID, new ID)
+
+Test ID System:
+- Auto-generated format: TEST001, TEST002, TEST003, etc.
+- "Edit ID" button next to Test ID field
+- Password protection for Test ID editing
+- Same security flow as Patient ID editing
+- Validation to prevent duplicate Test IDs
+- History tracking for Test ID modifications
+
+PASSWORD-PROTECTED EDITING WORKFLOW:
+1. Admin clicks "Edit ID" button
+2. Modal popup: "Enter Admin Password to Edit ID"
+3. Password input field with validation
+4. On correct password: ID field becomes editable
+5. On incorrect password: Error message "Invalid password"
+6. Save button appears only after successful password verification
+7. Confirmation: "Are you sure you want to change this ID?"
+8. Success notification: "ID updated successfully"
+9. Audit log entry created automatically
+
+MAIN DASHBOARD (Post-Login):
+- Welcome message with admin name
+- Quick stats cards (Today's Tests, Total Patients, Pending Reports)
+- Recent activity feed
+- Test type navigation cards (not dropdowns)
+- Professional medical UI with clean layout
+
+TEST INTERFACE STRUCTURE (Individual Pages, NOT Dropdowns):
+Each test type opens in a NEW TAB/PAGE:
+- CBC Test Page (dedicated interface)
+- LFT Test Page (dedicated interface) 
+- RFT Test Page (dedicated interface)
+- Lipid Profile Test Page (dedicated interface)
+- Blood Sugar Test Page (dedicated interface)
+- Thyroid Function Test Page (dedicated interface)
+- Urine Analysis Test Page (dedicated interface)
+- Cardiac Markers Test Page (dedicated interface)
+- Electrolytes Test Page (dedicated interface)
+
+PATIENT & ID MANAGEMENT SYSTEM:
+Patient Registration:
+- Auto-generated Patient ID (PAT001, PAT002, etc.) with edit capability
+- Patient Name, Age, Gender, Phone, Address
+- Registration Date and Time
+- Patient search functionality
+- Patient history view
+- ID editing with password protection
+
+Test ID System:
+- Auto-generated Test ID (TEST001, TEST002, etc.) with edit capability
+- Link Test ID to Patient ID
+- Test Type identifier
+- Test Date and Time
+- Technician/Admin who performed test
+- Test status (Completed, Pending, Reviewed)
+- Password-protected editing for Test IDs
+
+DATABASE STRUCTURE (Long-term data persistence):
+Use Supabase PostgreSQL with these tables:
+
+```sql
+-- Admin Users Table
+CREATE TABLE admin_users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  last_login TIMESTAMP,
+  password_changed_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Patients Table  
+CREATE TABLE patients (
+  id SERIAL PRIMARY KEY,
+  patient_id VARCHAR(20) UNIQUE NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  age INTEGER,
+  gender VARCHAR(10),
+  phone VARCHAR(15),
+  address TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  created_by INTEGER REFERENCES admin_users(id),
+  last_modified TIMESTAMP DEFAULT NOW(),
+  modified_by INTEGER REFERENCES admin_users(id)
+);
+
+-- Tests Table
+CREATE TABLE tests (
+  id SERIAL PRIMARY KEY,
+  test_id VARCHAR(20) UNIQUE NOT NULL,
+  patient_id INTEGER REFERENCES patients(id),
+  test_type VARCHAR(50) NOT NULL,
+  test_results JSONB NOT NULL,
+  normal_ranges JSONB NOT NULL,
+  flags JSONB, -- HIGH/LOW/NORMAL/CRITICAL flags
+  test_date DATE DEFAULT CURRENT_DATE,
+  test_time TIME DEFAULT CURRENT_TIME,
+  status VARCHAR(20) DEFAULT 'completed',
+  performed_by INTEGER REFERENCES admin_users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  last_modified TIMESTAMP DEFAULT NOW(),
+  modified_by INTEGER REFERENCES admin_users(id)
+);
+
+-- ID Change Audit Log Table
+CREATE TABLE id_change_log (
+  id SERIAL PRIMARY KEY,
+  table_name VARCHAR(20) NOT NULL, -- 'patients' or 'tests'
+  record_id INTEGER NOT NULL,
+  old_id VARCHAR(20) NOT NULL,
+  new_id VARCHAR(20) NOT NULL,
+  changed_by INTEGER REFERENCES admin_users(id),
+  changed_at TIMESTAMP DEFAULT NOW(),
+  reason TEXT
+);
+
+-- Test Templates Table (for normal ranges)
+CREATE TABLE test_templates (
+  id SERIAL PRIMARY KEY,
+  test_type VARCHAR(50) NOT NULL,
+  parameters JSONB NOT NULL, -- parameter names, units, normal ranges
+  created_at TIMESTAMP DEFAULT NOW()
+);
