@@ -152,13 +152,142 @@ export default function RFTTest() {
     }));
   };
 
+  // Function to get flag for a parameter
+  const getFlag = (paramName: string, value: string) => {
+    const numValue = parseFloat(value);
+    if (isNaN(numValue) || !value.trim()) return "";
+    
+    const param = rftParameters.find(p => p.name === paramName);
+    if (!param) return "";
+    
+    if (param.name === "egfr") {
+      // eGFR has different logic (>60 is normal)
+      return numValue >= 60 ? "NORMAL" : "LOW";
+    } else {
+      const [min, max] = param.normalRange.split('-').map(parseFloat);
+      if (numValue < min) return "LOW";
+      if (numValue > max) return "HIGH";
+      return "NORMAL";
+    }
+  };
+
+  // Function to get flag color
+  const getFlagColor = (flag: string) => {
+    switch (flag) {
+      case "LOW": return "text-red-600 bg-red-50";
+      case "HIGH": return "text-red-600 bg-red-50";
+      case "NORMAL": return "text-green-600 bg-green-50";
+      default: return "text-slate-500 bg-slate-50";
+    }
+  };
+
   const handleIdUpdate = async (newId: string) => {
     setFormData(prev => ({ ...prev, testId: newId }));
     setEditingTestId(false);
   };
 
   const handlePrint = () => {
-    window.print();
+    // Create a clean print layout
+    const printContent = generatePrintContent();
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
+  };
+
+  const generatePrintContent = () => {
+    const selectedPatient = patients.find(p => p.patientId === formData.patientId);
+    const currentDate = new Date().toLocaleDateString();
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>RFT Report - ${formData.testId}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+          .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
+          .report-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
+          .patient-info, .test-info { flex: 1; }
+          .results-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          .results-table th, .results-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+          .results-table th { background-color: #f8f9fa; font-weight: bold; }
+          .flag-normal { color: #16a34a; font-weight: bold; }
+          .flag-high, .flag-low { color: #dc2626; font-weight: bold; }
+          .comments { margin-top: 30px; }
+          .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">Laboratory Management System</div>
+          <h2>Renal Function Test (RFT) Report</h2>
+        </div>
+        
+        <div class="report-info">
+          <div class="patient-info">
+            <h3>Patient Information</h3>
+            <p><strong>Patient ID:</strong> ${formData.patientId}</p>
+            <p><strong>Name:</strong> ${selectedPatient?.name || 'N/A'}</p>
+            <p><strong>Age:</strong> ${selectedPatient?.age || 'N/A'}</p>
+            <p><strong>Gender:</strong> ${selectedPatient?.gender || 'N/A'}</p>
+          </div>
+          <div class="test-info">
+            <h3>Test Information</h3>
+            <p><strong>Test ID:</strong> ${formData.testId}</p>
+            <p><strong>Test Type:</strong> RFT</p>
+            <p><strong>Date:</strong> ${currentDate}</p>
+            <p><strong>Status:</strong> Completed</p>
+          </div>
+        </div>
+        
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Result</th>
+              <th>Normal Range</th>
+              <th>Flag</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rftParameters.map(param => {
+              const value = formData.results[param.name] || '';
+              const flag = getFlag(param.name, value);
+              const flagClass = flag === 'NORMAL' ? 'flag-normal' : flag ? 'flag-high' : '';
+              return `
+                <tr>
+                  <td>${param.label}</td>
+                  <td>${value} ${value ? param.unit : ''}</td>
+                  <td>${param.normalRange} ${param.unit}</td>
+                  <td class="${flagClass}">${flag}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+        
+        ${formData.comments ? `
+          <div class="comments">
+            <h3>Comments</h3>
+            <p>${formData.comments}</p>
+          </div>
+        ` : ''}
+        
+        <div class="footer">
+          <p>This report was generated by Laboratory Management System</p>
+          <p>Report generated on ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+      </html>
+    `;
   };
 
   return (
@@ -217,28 +346,64 @@ export default function RFTTest() {
             </div>
 
             {/* RFT Parameters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {rftParameters.map((param) => (
-                <div key={param.name}>
-                  <Label className="block text-sm font-medium text-slate-700 mb-2">
-                    {param.label}
-                  </Label>
-                  <div className="flex">
-                    <Input
-                      type="number"
-                      step={param.step}
-                      value={formData.results[param.name] || ""}
-                      onChange={(e) => handleResultChange(param.name, e.target.value)}
-                      className="flex-1 rounded-r-none"
-                      placeholder={param.normalRange}
-                    />
-                    <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">
-                      {param.unit}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">Normal: {param.normalRange} {param.unit}</p>
-                </div>
-              ))}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Test Parameters</h3>
+              <div className="grid gap-4">
+                {rftParameters.map((param) => {
+                  const currentValue = formData.results[param.name] || "";
+                  const flag = getFlag(param.name, currentValue);
+                  const flagColor = getFlagColor(flag);
+                  
+                  return (
+                    <div key={param.name} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
+                        {/* Parameter Name */}
+                        <div className="lg:col-span-1">
+                          <Label className="text-sm font-medium text-slate-700">
+                            {param.label}
+                          </Label>
+                        </div>
+                        
+                        {/* Normal Range */}
+                        <div className="lg:col-span-1">
+                          <div className="text-sm text-slate-600">
+                            <span className="font-medium">Normal Range:</span>
+                            <div className="text-blue-600 font-semibold">
+                              {param.normalRange} {param.unit}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Result Input */}
+                        <div className="lg:col-span-1">
+                          <div className="flex">
+                            <Input
+                              type="number"
+                              step={param.step}
+                              value={currentValue}
+                              onChange={(e) => handleResultChange(param.name, e.target.value)}
+                              className="flex-1 rounded-r-none text-center font-medium"
+                              placeholder="Enter result"
+                            />
+                            <span className="px-3 py-2 bg-white border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600 font-medium">
+                              {param.unit}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Flag Status */}
+                        <div className="lg:col-span-1">
+                          {flag && (
+                            <div className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${flagColor}`}>
+                              {flag}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Comments */}
