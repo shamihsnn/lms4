@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Edit3, Eye } from "lucide-react";
 import EditIdModal from "@/components/modals/edit-id-modal";
+import PatientReportModal from "@/components/modals/patient-report-modal";
 import type { Patient, InsertPatient } from "@shared/schema";
 
 export default function Patients() {
@@ -23,6 +24,8 @@ export default function Patients() {
     address: "",
   });
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [showPatientReport, setShowPatientReport] = useState(false);
 
   const { toast } = useToast();
 
@@ -144,6 +147,16 @@ export default function Patients() {
         });
       }
     }
+  };
+
+  const handleViewPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setShowPatientReport(true);
+  };
+
+  const handleClosePatientReport = () => {
+    setShowPatientReport(false);
+    setSelectedPatient(null);
   };
 
   return (
@@ -294,13 +307,19 @@ export default function Patients() {
                         <TableCell>{patient.phone || "-"}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewPatient(patient)}
+                              title="View patient report"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditId(patient.id)}
+                              title="Edit patient ID"
                             >
                               <Edit3 className="h-4 w-4" />
                             </Button>
@@ -322,6 +341,12 @@ export default function Patients() {
         currentId={editingPatientId ? patients.find(p => p.id === editingPatientId)?.patientId || "" : formData.patientId}
         idType="Patient"
         onUpdate={handleIdUpdate}
+      />
+      
+      <PatientReportModal
+        isOpen={showPatientReport}
+        onClose={handleClosePatientReport}
+        patient={selectedPatient}
       />
     </div>
   );

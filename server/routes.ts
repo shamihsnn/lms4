@@ -213,6 +213,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get tests for specific patient
+  app.get("/api/patients/:patientId/tests", requireAuth, async (req, res) => {
+    try {
+      const { patientId } = req.params;
+      const tests = await storage.getTestsByPatient(parseInt(patientId));
+      res.json(tests);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/tests/next-id", requireAuth, async (req, res) => {
     try {
       const nextId = await storage.getNextTestId();
