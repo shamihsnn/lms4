@@ -24,6 +24,7 @@ export interface IStorage {
   getTestByTestId(testId: string): Promise<Test | undefined>;
   getAllTests(): Promise<Test[]>;
   getTestsByPatient(patientId: number): Promise<Test[]>;
+  getAllTestsWithPatients(): Promise<(Test & { patient?: Patient })[]>;
   createTest(test: InsertTest): Promise<Test>;
   updateTest(id: number, test: Partial<InsertTest>): Promise<Test>;
   getNextTestId(): Promise<string>;
@@ -209,6 +210,14 @@ export class MemStorage implements IStorage {
 
   async getTestsByPatient(patientId: number): Promise<Test[]> {
     return Array.from(this.tests.values()).filter(test => test.patientId === patientId);
+  }
+
+  async getAllTestsWithPatients(): Promise<(Test & { patient?: Patient })[]> {
+    const allTests = Array.from(this.tests.values());
+    return Promise.all(allTests.map(async test => {
+      const patient = test.patientId ? await this.getPatient(test.patientId) : undefined;
+      return { ...test, patient };
+    }));
   }
 
   async createTest(insertTest: InsertTest): Promise<Test> {

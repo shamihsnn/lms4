@@ -213,6 +213,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get tests with patient information for reports
+  app.get("/api/tests/with-patients", requireAuth, async (req, res) => {
+    try {
+      const testsWithPatients = await storage.getAllTestsWithPatients();
+      res.json(testsWithPatients);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Get tests for specific patient
   app.get("/api/patients/:patientId/tests", requireAuth, async (req, res) => {
     try {

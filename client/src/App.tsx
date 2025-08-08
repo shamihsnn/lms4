@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Patients from "@/pages/patients";
+import Reports from "@/pages/reports";
 import CBCTest from "@/pages/tests/cbc";
 import LFTTest from "@/pages/tests/lft";
 import RFTTest from "@/pages/tests/rft";
@@ -44,6 +45,7 @@ function AppContent() {
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/patients" component={Patients} />
+          <Route path="/reports" component={Reports} />
           <Route path="/tests/cbc" component={CBCTest} />
           <Route path="/tests/lft" component={LFTTest} />
           <Route path="/tests/rft" component={RFTTest} />

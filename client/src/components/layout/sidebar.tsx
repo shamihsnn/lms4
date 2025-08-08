@@ -22,6 +22,7 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Patients", href: "/patients", icon: Users },
+  { name: "Reports", href: "/reports", icon: FileText },
 ];
 
 const testNavigation = [
