@@ -17,6 +17,25 @@ import ThyroidTest from "@/pages/tests/thyroid";
 import UrineTest from "@/pages/tests/urine";
 import CardiacTest from "@/pages/tests/cardiac";
 import ElectrolytesTest from "@/pages/tests/electrolytes";
+import CoagulationTest from "@/pages/tests/coagulation";
+import CRPTest from "@/pages/tests/crp";
+import BloodGroupTest from "@/pages/tests/blood-group";
+import ICTMalariaTest from "@/pages/tests/ict-malaria";
+import LHTest from "@/pages/tests/lh";
+import ProlactinTest from "@/pages/tests/prolactin";
+import RAFactorTest from "@/pages/tests/ra-factor";
+import SemenAnalysisTest from "@/pages/tests/semen-analysis";
+import StoolOccultBloodTest from "@/pages/tests/stool-occult-blood";
+import StoolRETest from "@/pages/tests/stool-re";
+import TestosteroneTest from "@/pages/tests/testosterone";
+import TyphidotTest from "@/pages/tests/typhidot";
+import VDRLTest from "@/pages/tests/vdrl";
+import WidalTest from "@/pages/tests/widal";
+import HCVTest from "@/pages/tests/hcv";
+import HIVTest from "@/pages/tests/hiv";
+import CreatinineTest from "@/pages/tests/creatinine";
+import BilirubinTest from "@/pages/tests/bilirubin";
+import HBsAgTest from "@/pages/tests/hbsag";
 import Sidebar from "@/components/layout/sidebar";
 import NotFound from "@/pages/not-found";
 
@@ -55,6 +74,25 @@ function AppContent() {
           <Route path="/tests/urine" component={UrineTest} />
           <Route path="/tests/cardiac" component={CardiacTest} />
           <Route path="/tests/electrolytes" component={ElectrolytesTest} />
+          <Route path="/tests/coagulation" component={CoagulationTest} />
+          <Route path="/tests/crp" component={CRPTest} />
+          <Route path="/tests/blood-group" component={BloodGroupTest} />
+          <Route path="/tests/ict-malaria" component={ICTMalariaTest} />
+          <Route path="/tests/lh" component={LHTest} />
+          <Route path="/tests/prolactin" component={ProlactinTest} />
+          <Route path="/tests/ra-factor" component={RAFactorTest} />
+          <Route path="/tests/semen-analysis" component={SemenAnalysisTest} />
+          <Route path="/tests/stool-occult-blood" component={StoolOccultBloodTest} />
+          <Route path="/tests/stool-re" component={StoolRETest} />
+          <Route path="/tests/testosterone" component={TestosteroneTest} />
+          <Route path="/tests/typhidot" component={TyphidotTest} />
+          <Route path="/tests/vdrl" component={VDRLTest} />
+          <Route path="/tests/widal" component={WidalTest} />
+          <Route path="/tests/hcv" component={HCVTest} />
+          <Route path="/tests/hiv" component={HIVTest} />
+          <Route path="/tests/creatinine" component={CreatinineTest} />
+          <Route path="/tests/bilirubin" component={BilirubinTest} />
+          <Route path="/tests/hbsag" component={HBsAgTest} />
           <Route component={NotFound} />
         </Switch>
       </div>

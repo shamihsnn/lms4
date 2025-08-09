@@ -35,6 +35,25 @@ const testNavigation = [
   { name: "Urine Analysis", href: "/tests/urine", icon: Eye },
   { name: "Cardiac Markers", href: "/tests/cardiac", icon: Heart },
   { name: "Electrolytes", href: "/tests/electrolytes", icon: Zap },
+  { name: "Coagulation", href: "/tests/coagulation", icon: Thermometer },
+  { name: "CRP", href: "/tests/crp", icon: Activity },
+  { name: "Blood Group", href: "/tests/blood-group", icon: Droplets },
+  { name: "ICT Malaria", href: "/tests/ict-malaria", icon: Zap },
+  { name: "LH", href: "/tests/lh", icon: Activity },
+  { name: "Prolactin", href: "/tests/prolactin", icon: Activity },
+  { name: "RA Factor", href: "/tests/ra-factor", icon: Activity },
+  { name: "Semen Analysis", href: "/tests/semen-analysis", icon: FlaskConical },
+  { name: "Stool Occult Blood", href: "/tests/stool-occult-blood", icon: FlaskConical },
+  { name: "Stool R/E", href: "/tests/stool-re", icon: FlaskConical },
+  { name: "Testosterone", href: "/tests/testosterone", icon: Activity },
+  { name: "Typhidot", href: "/tests/typhidot", icon: Thermometer },
+  { name: "VDRL", href: "/tests/vdrl", icon: Thermometer },
+  { name: "Widal", href: "/tests/widal", icon: Thermometer },
+  { name: "HCV", href: "/tests/hcv", icon: Thermometer },
+  { name: "HIV", href: "/tests/hiv", icon: Thermometer },
+  { name: "Creatinine", href: "/tests/creatinine", icon: FlaskConical },
+  { name: "Bilirubin", href: "/tests/bilirubin", icon: FlaskConical },
+  { name: "HBsAg", href: "/tests/hbsag", icon: Thermometer },
 ];
 
 export default function Sidebar() {
@@ -63,7 +82,7 @@ export default function Sidebar() {
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center px-6 py-4 border-b border-slate-200">
-          <Logo className="h-10 w-auto" />
+          <Logo className="h-11 w-auto" />
           <span className="ml-3 font-semibold text-slate-800">AL-QASIM</span>
         </div>
 

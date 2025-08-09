@@ -76,6 +76,132 @@ const testTypes = [
     description: "Ion balance analysis",
     color: "bg-orange-100 text-orange-600"
   },
+  { 
+    name: "CRP", 
+    href: "/tests/crp", 
+    icon: Activity, 
+    description: "C-Reactive Protein",
+    color: "bg-emerald-100 text-emerald-600"
+  },
+  { 
+    name: "Blood Group", 
+    href: "/tests/blood-group", 
+    icon: Droplets, 
+    description: "ABO/Rh typing",
+    color: "bg-sky-100 text-sky-600"
+  },
+  { 
+    name: "ICT Malaria", 
+    href: "/tests/ict-malaria", 
+    icon: Zap, 
+    description: "Rapid malaria antigen",
+    color: "bg-lime-100 text-lime-600"
+  },
+  { 
+    name: "LH", 
+    href: "/tests/lh", 
+    icon: Activity, 
+    description: "Luteinizing hormone",
+    color: "bg-fuchsia-100 text-fuchsia-600"
+  },
+  { 
+    name: "Prolactin", 
+    href: "/tests/prolactin", 
+    icon: Activity, 
+    description: "Pituitary hormone",
+    color: "bg-amber-100 text-amber-600"
+  },
+  { 
+    name: "RA Factor", 
+    href: "/tests/ra-factor", 
+    icon: Activity, 
+    description: "Rheumatoid factor",
+    color: "bg-rose-100 text-rose-600"
+  },
+  { 
+    name: "Semen Analysis", 
+    href: "/tests/semen-analysis", 
+    icon: FlaskConical, 
+    description: "WHO semen profile",
+    color: "bg-teal-100 text-teal-600"
+  },
+  { 
+    name: "Stool Occult Blood", 
+    href: "/tests/stool-occult-blood", 
+    icon: FlaskConical, 
+    description: "FOBT",
+    color: "bg-stone-100 text-stone-600"
+  },
+  { 
+    name: "Stool R/E", 
+    href: "/tests/stool-re", 
+    icon: FlaskConical, 
+    description: "Routine exam",
+    color: "bg-zinc-100 text-zinc-600"
+  },
+  { 
+    name: "Testosterone", 
+    href: "/tests/testosterone", 
+    icon: Activity, 
+    description: "Androgen level",
+    color: "bg-indigo-100 text-indigo-600"
+  },
+  { 
+    name: "Typhidot", 
+    href: "/tests/typhidot", 
+    icon: Thermometer, 
+    description: "S. typhi antibodies",
+    color: "bg-yellow-100 text-yellow-600"
+  },
+  { 
+    name: "VDRL", 
+    href: "/tests/vdrl", 
+    icon: Thermometer, 
+    description: "Syphilis screening",
+    color: "bg-red-100 text-red-600"
+  },
+  { 
+    name: "Widal", 
+    href: "/tests/widal", 
+    icon: Thermometer, 
+    description: "Typhoid agglutination",
+    color: "bg-orange-100 text-orange-600"
+  },
+  { 
+    name: "HCV", 
+    href: "/tests/hcv", 
+    icon: Thermometer, 
+    description: "Anti-HCV",
+    color: "bg-green-100 text-green-600"
+  },
+  { 
+    name: "HIV", 
+    href: "/tests/hiv", 
+    icon: Thermometer, 
+    description: "HIV 1/2 rapid",
+    color: "bg-red-100 text-red-600"
+  },
+  { 
+    name: "Creatinine", 
+    href: "/tests/creatinine", 
+    icon: FlaskConical, 
+    description: "Renal marker",
+    color: "bg-blue-100 text-blue-600"
+  },
+  { 
+    name: "Bilirubin", 
+    href: "/tests/bilirubin", 
+    icon: FlaskConical, 
+    description: "Total/Direct/Indirect",
+    color: "bg-yellow-100 text-yellow-600"
+  },
+  { 
+    name: "HBsAg", 
+    href: "/tests/hbsag", 
+    icon: Thermometer, 
+    description: "Hep B surface antigen",
+    color: "bg-cyan-100 text-cyan-600"
+  },
 ];
 
 export default function TestNavigation() {
