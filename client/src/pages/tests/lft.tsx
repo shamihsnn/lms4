@@ -9,6 +9,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Edit3, Printer } from "lucide-react";
+import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
@@ -52,6 +53,7 @@ export default function LFTTest() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tests/with-patients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tests/next-id"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       setFormData({
@@ -177,108 +179,30 @@ export default function LFTTest() {
   };
 
   const handlePrint = () => {
-    // Create a clean print layout
-    const printContent = generatePrintContent();
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 250);
-    }
+    const selectedPatient = patients.find(p => p.patientId === formData.patientId);
+    const rows: ReportRow[] = lftParameters.map(param => {
+      const value = formData.results[param.name] || "";
+      const flag = getFlag(param.name, value) as ReportRow["flag"];
+      return {
+        parameterLabel: param.label,
+        value,
+        unit: param.unit,
+        normalRange: `${param.normalRange} ${param.unit}`,
+        flag,
+      };
+    });
+    printLabReport({
+      reportTitle: "FINAL REPORT",
+      testId: formData.testId,
+      testType: "Liver Function Test (LFT)",
+      patient: selectedPatient,
+      rows,
+      comments: formData.comments,
+      minimal: true,
+    });
   };
 
-  const generatePrintContent = () => {
-    const selectedPatient = patients.find(p => p.patientId === formData.patientId);
-    const currentDate = new Date().toLocaleDateString();
-    
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>LFT Report - ${formData.testId}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-          .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
-          .report-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
-          .patient-info, .test-info { flex: 1; }
-          .results-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          .results-table th, .results-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-          .results-table th { background-color: #f8f9fa; font-weight: bold; }
-          .flag-normal { color: #16a34a; font-weight: bold; }
-          .flag-high, .flag-low { color: #dc2626; font-weight: bold; }
-          .comments { margin-top: 30px; }
-          .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="logo">Laboratory Management System</div>
-          <h2>Liver Function Test (LFT) Report</h2>
-        </div>
-        
-        <div class="report-info">
-          <div class="patient-info">
-            <h3>Patient Information</h3>
-            <p><strong>Patient ID:</strong> ${formData.patientId}</p>
-            <p><strong>Name:</strong> ${selectedPatient?.name || 'N/A'}</p>
-            <p><strong>Age:</strong> ${selectedPatient?.age || 'N/A'}</p>
-            <p><strong>Gender:</strong> ${selectedPatient?.gender || 'N/A'}</p>
-          </div>
-          <div class="test-info">
-            <h3>Test Information</h3>
-            <p><strong>Test ID:</strong> ${formData.testId}</p>
-            <p><strong>Test Type:</strong> LFT</p>
-            <p><strong>Date:</strong> ${currentDate}</p>
-            <p><strong>Status:</strong> Completed</p>
-          </div>
-        </div>
-        
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th>Parameter</th>
-              <th>Result</th>
-              <th>Normal Range</th>
-              <th>Flag</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${lftParameters.map(param => {
-              const value = formData.results[param.name] || '';
-              const flag = getFlag(param.name, value);
-              const flagClass = flag === 'NORMAL' ? 'flag-normal' : flag ? 'flag-high' : '';
-              return `
-                <tr>
-                  <td>${param.label}</td>
-                  <td>${value} ${value ? param.unit : ''}</td>
-                  <td>${param.normalRange} ${param.unit}</td>
-                  <td class="${flagClass}">${flag}</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-        
-        ${formData.comments ? `
-          <div class="comments">
-            <h3>Comments</h3>
-            <p>${formData.comments}</p>
-          </div>
-        ` : ''}
-        
-        <div class="footer">
-          <p>This report was generated by Laboratory Management System</p>
-          <p>Report generated on ${new Date().toLocaleString()}</p>
-        </div>
-      </body>
-      </html>
-    `;
-  };
+  // legacy generator removed in favor of printLabReport
 
   return (
     <div className="p-8">

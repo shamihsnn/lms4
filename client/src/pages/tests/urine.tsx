@@ -9,6 +9,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Edit3, Printer } from "lucide-react";
+import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
@@ -56,6 +57,7 @@ export default function UrineTest() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tests/with-patients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tests/next-id"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       setFormData({
@@ -165,7 +167,36 @@ export default function UrineTest() {
   };
 
   const handlePrint = () => {
-    window.print();
+    const selectedPatient = patients.find(p => p.patientId === formData.patientId);
+    const rows: ReportRow[] = urineParameters.map(param => {
+      const value = formData.results[param.name] || "";
+      let flag: ReportRow["flag"] = "";
+      if (value !== "") {
+        if (param.type === "number") {
+          const v = parseFloat(value);
+          const [min, max] = param.normalRange.split('-').map(parseFloat);
+          flag = !isNaN(v) ? (v < min ? "LOW" : v > max ? "HIGH" : "NORMAL") : "";
+        } else {
+          flag = value.toLowerCase() === param.normalRange.toLowerCase() ? "NORMAL" : "ABNORMAL";
+        }
+      }
+      return {
+        parameterLabel: param.label,
+        value,
+        unit: param.unit || undefined,
+        normalRange: param.unit ? `${param.normalRange} ${param.unit}` : param.normalRange,
+        flag,
+      };
+    });
+    printLabReport({
+      reportTitle: "FINAL REPORT",
+      testId: formData.testId,
+      testType: "Urine Examination",
+      patient: selectedPatient,
+      rows,
+      comments: formData.comments,
+      minimal: true,
+    });
   };
 
   return (

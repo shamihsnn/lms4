@@ -10,11 +10,11 @@ export default function Logo({ className, showText = false, textClassName }: Log
   return (
     <div className={`flex items-center ${showText ? "space-x-3" : ""}`}>
       <img
-        src="/logo-al-qasim.png"
+        src="/logo-al-qasim.jpg"
         alt="AL-QASIM Clinic & Lab"
         className={
           className ||
-          "h-10 w-auto object-contain drop-shadow-sm [image-rendering:auto]"
+          "h-10 w-auto max-w-full object-contain drop-shadow-sm [image-rendering:auto]"
         }
         loading="eager"
       />

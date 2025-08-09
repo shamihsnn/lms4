@@ -55,7 +55,7 @@ export default function Login() {
             {/* Header */}
             <div className="text-center mb-8">
               <div className="mx-auto mb-4">
-                <Logo className="h-16 w-auto mx-auto" />
+                <Logo className="h-28 md:h-36 lg:h-40 w-auto mx-auto" />
               </div>
               <h2 className="text-3xl font-bold text-slate-800">AL-QASIM Clinic & Lab</h2>
               <p className="text-slate-600 mt-2">Secure Admin Access</p>

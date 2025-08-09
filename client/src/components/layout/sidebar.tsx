@@ -63,7 +63,7 @@ export default function Sidebar() {
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center px-6 py-4 border-b border-slate-200">
-          <Logo className="h-8 w-auto" />
+          <Logo className="h-10 w-auto" />
           <span className="ml-3 font-semibold text-slate-800">AL-QASIM</span>
         </div>
 

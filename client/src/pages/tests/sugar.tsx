@@ -9,6 +9,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Edit3, Printer } from "lucide-react";
+import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
@@ -50,6 +51,7 @@ export default function SugarTest() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tests/with-patients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tests/next-id"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       setFormData({
@@ -158,7 +160,41 @@ export default function SugarTest() {
   };
 
   const handlePrint = () => {
-    window.print();
+    const selectedPatient = patients.find(p => p.patientId === formData.patientId);
+    const rows: ReportRow[] = sugarParameters.map(param => {
+      const value = formData.results[param.name] || "";
+      // derive flag similar to calculation above
+      let flag: ReportRow["flag"] = "";
+      if (value !== "") {
+        const v = parseFloat(value);
+        if (param.name === "postPrandial" || param.name === "gtt1hr" || param.name === "gtt2hr") {
+          const thr = parseFloat(param.normalRange.replace('<', ''));
+          flag = !isNaN(v) ? (v <= thr ? "NORMAL" : "HIGH") : "";
+        } else if (param.name === "hba1c") {
+          const [min, max] = param.normalRange.split('-').map(parseFloat);
+          flag = !isNaN(v) ? (v < min ? "LOW" : v > max ? "HIGH" : "NORMAL") : "";
+        } else {
+          const [min, max] = param.normalRange.split('-').map(parseFloat);
+          flag = !isNaN(v) ? (v < min ? "LOW" : v > max ? "HIGH" : "NORMAL") : "";
+        }
+      }
+      return {
+        parameterLabel: param.label,
+        value,
+        unit: param.unit,
+        normalRange: `${param.normalRange} ${param.unit}`,
+        flag,
+      };
+    });
+    printLabReport({
+      reportTitle: "FINAL REPORT",
+      testId: formData.testId,
+      testType: "Blood Sugar",
+      patient: selectedPatient,
+      rows,
+      comments: formData.comments,
+      minimal: true,
+    });
   };
 
   return (

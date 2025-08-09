@@ -95,10 +95,10 @@ export default function Dashboard() {
       {/* Welcome Header */}
       <div className="mb-8 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Welcome back, Admin</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Welcome to AL-QASIM Clinic & Lab</h1>
           <p className="text-slate-600">Here's what's happening in your lab today.</p>
         </div>
-        <Logo className="h-10 w-auto hidden sm:block" />
+        <Logo className="h-12 w-auto hidden sm:block" />
       </div>
 
       {/* Stats Cards */}
