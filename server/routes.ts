@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { SupabaseStorage } from "./supabase-storage";
 import bcrypt from "bcryptjs";
 import session from "express-session";
 import { loginSchema, changePasswordSchema, insertPatientSchema, insertTestSchema } from "@shared/schema";
@@ -13,6 +13,9 @@ declare module 'express-session' {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize Supabase storage
+  const storage = new SupabaseStorage();
+
   // Session configuration
   app.use(session({
     secret: process.env.SESSION_SECRET || 'lab-management-secret-key',
