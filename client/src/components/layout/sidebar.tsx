@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  TestTube2, 
   LayoutDashboard, 
   Users, 
   FileText,
@@ -18,6 +17,7 @@ import {
   Thermometer,
   FlaskConical
 } from "lucide-react";
+import Logo from "@/components/brand/logo";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -63,10 +63,8 @@ export default function Sidebar() {
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center px-6 py-4 border-b border-slate-200">
-          <div className="h-10 w-10 medical-gradient rounded-lg flex items-center justify-center">
-            <TestTube2 className="h-6 w-6 text-white" />
-          </div>
-          <span className="ml-3 font-semibold text-slate-800">Lab Management</span>
+          <Logo className="h-8 w-auto" />
+          <span className="ml-3 font-semibold text-slate-800">AL-QASIM</span>
         </div>
 
         {/* Navigation Menu */}

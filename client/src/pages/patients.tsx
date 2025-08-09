@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Edit3, Eye } from "lucide-react";
+import { Edit3, Eye, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import PatientReportModal from "@/components/modals/patient-report-modal";
 import type { Patient, InsertPatient } from "@shared/schema";
@@ -35,7 +36,7 @@ export default function Patients() {
   });
 
   // Get all patients
-  const { data: patients = [], isLoading } = useQuery<Patient[]>({
+  const { data: patients = [], isLoading, error: patientsError } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
   });
 
@@ -75,6 +76,29 @@ export default function Patients() {
       toast({
         title: "Patient ID updated successfully",
         description: "Patient ID has been changed",
+      });
+    },
+  });
+
+  // Delete patient mutation
+  const deletePatientMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/patients/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "Patient deleted successfully",
+        description: "Patient has been removed from the system",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete patient",
+        variant: "destructive",
       });
     },
   });
@@ -157,6 +181,14 @@ export default function Patients() {
   const handleClosePatientReport = () => {
     setShowPatientReport(false);
     setSelectedPatient(null);
+  };
+
+  const handleDeletePatient = async (patientId: number) => {
+    try {
+      await deletePatientMutation.mutateAsync(patientId);
+    } catch (error) {
+      // Error handling is done in the mutation onError
+    }
   };
 
   return (
@@ -277,6 +309,8 @@ export default function Patients() {
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
+          ) : patientsError ? (
+            <div className="text-center py-8 text-red-600">Failed to load patients</div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -323,6 +357,39 @@ export default function Patients() {
                             >
                               <Edit3 className="h-4 w-4" />
                             </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Delete patient"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Patient</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete patient <strong>{patient.patientId} - {patient.name}</strong>? 
+                                    This action cannot be undone and will permanently remove the patient from the system.
+                                    <br /><br />
+                                    <strong>Note:</strong> You cannot delete a patient who has associated test reports. Please delete all test reports for this patient first.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeletePatient(patient.id)}
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                    disabled={deletePatientMutation.isPending}
+                                  >
+                                    {deletePatientMutation.isPending ? "Deleting..." : "Delete Patient"}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </TableCell>
                       </TableRow>

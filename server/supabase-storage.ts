@@ -122,6 +122,15 @@ export class SupabaseStorage implements IStorage {
     return result[0];
   }
 
+  async deletePatient(id: number): Promise<void> {
+    // Check for existing tests
+    const existingTests = await this.getTestsByPatient(id);
+    if (existingTests.length > 0) {
+      throw new Error("Cannot delete patient with existing test reports");
+    }
+    await db.delete(patients).where(eq(patients.id, id));
+  }
+
   async getNextPatientId(): Promise<string> {
     const result = await db.select({ patientId: patients.patientId })
       .from(patients)
@@ -265,6 +274,10 @@ export class SupabaseStorage implements IStorage {
       throw new Error("Test not found");
     }
     return result[0];
+  }
+
+  async deleteTest(id: number): Promise<void> {
+    await db.delete(tests).where(eq(tests.id, id));
   }
 
   async getNextTestId(): Promise<string> {

@@ -16,6 +16,7 @@ export interface IStorage {
   getAllPatients(): Promise<Patient[]>;
   createPatient(patient: InsertPatient): Promise<Patient>;
   updatePatient(id: number, patient: Partial<InsertPatient>): Promise<Patient>;
+  deletePatient(id: number): Promise<void>;
   getNextPatientId(): Promise<string>;
   updatePatientId(id: number, newPatientId: string, adminId: number): Promise<void>;
 
@@ -27,6 +28,7 @@ export interface IStorage {
   getAllTestsWithPatients(): Promise<(Test & { patient?: Patient })[]>;
   createTest(test: InsertTest): Promise<Test>;
   updateTest(id: number, test: Partial<InsertTest>): Promise<Test>;
+  deleteTest(id: number): Promise<void>;
   getNextTestId(): Promise<string>;
   updateTestId(id: number, newTestId: string, adminId: number): Promise<void>;
 
@@ -157,6 +159,17 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async deletePatient(id: number): Promise<void> {
+    // Prevent deleting a patient with associated tests
+    const hasTests = Array.from(this.tests.values()).some(
+      (test) => test.patientId === id,
+    );
+    if (hasTests) {
+      throw new Error("Cannot delete patient with existing test reports");
+    }
+    this.patients.delete(id);
+  }
+
   async getNextPatientId(): Promise<string> {
     const patients = Array.from(this.patients.values());
     const maxNum = patients.reduce((max, patient) => {
@@ -251,6 +264,10 @@ export class MemStorage implements IStorage {
     };
     this.tests.set(id, updated);
     return updated;
+  }
+
+  async deleteTest(id: number): Promise<void> {
+    this.tests.delete(id);
   }
 
   async getNextTestId(): Promise<string> {

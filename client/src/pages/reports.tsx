@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   Printer, 
   FileText, 
@@ -15,8 +16,10 @@ import {
   Calendar,
   User,
   TestTube2,
-  Eye
+  Eye,
+  Trash2
 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { Test, Patient } from "@shared/schema";
 import TestReportModal from "../components/modals/test-report-modal";
 
@@ -26,7 +29,7 @@ interface TestWithPatient extends Test {
 
 export default function Reports() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPatientId, setSelectedPatientId] = useState<string>("");
+  const [selectedPatientId, setSelectedPatientId] = useState<string>("all");
   const [selectedTestType, setSelectedTestType] = useState<string>("all");
   const [selectedTest, setSelectedTest] = useState<TestWithPatient | null>(null);
   const [showTestReport, setShowTestReport] = useState(false);
@@ -43,16 +46,45 @@ export default function Reports() {
     queryKey: ["/api/patients"],
   });
 
-  // Filter tests based on selected patient and test type
-  const filteredTests = tests.filter(test => {
-    const matchesPatient = !selectedPatientId || test.patientId?.toString() === selectedPatientId;
-    const matchesTestType = selectedTestType === "all" || test.testType === selectedTestType;
-    const matchesSearch = !searchTerm || 
-      test.testId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      test.patient?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      test.patient?.patientId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      test.testType.toLowerCase().includes(searchTerm.toLowerCase());
-    
+  // Delete test mutation
+  const deleteTestMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/tests/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tests/with-patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "Test report deleted successfully",
+        description: "Test report has been removed from the system",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete test report",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Filter tests based on selected patient and test type (defensive against nulls)
+  const filteredTests = (tests || []).filter((test) => {
+    const safeSearch = (value: unknown) =>
+      typeof value === "string" ? value.toLowerCase() : "";
+
+    const matchesPatient =
+      selectedPatientId === "all" || test.patientId?.toString() === selectedPatientId;
+    const matchesTestType =
+      selectedTestType === "all" || test.testType === selectedTestType;
+    const matchesSearch =
+      !searchTerm ||
+      safeSearch(test.testId).includes(searchTerm.toLowerCase()) ||
+      safeSearch(test.patient?.name).includes(searchTerm.toLowerCase()) ||
+      safeSearch(test.patient?.patientId).includes(searchTerm.toLowerCase()) ||
+      safeSearch(test.testType).includes(searchTerm.toLowerCase());
+
     return matchesPatient && matchesTestType && matchesSearch;
   });
 
@@ -66,7 +98,9 @@ export default function Reports() {
   }, {} as Record<string, TestWithPatient[]>);
 
   // Get unique test types for filter
-  const testTypes = Array.from(new Set(tests.map(test => test.testType))).sort();
+  const testTypes = Array.from(
+    new Set((tests || []).map((test) => test.testType).filter(Boolean)),
+  ).sort();
 
   const handleViewTest = (test: TestWithPatient) => {
     setSelectedTest(test);
@@ -76,6 +110,14 @@ export default function Reports() {
   const handleCloseTestReport = () => {
     setSelectedTest(null);
     setShowTestReport(false);
+  };
+
+  const handleDeleteTest = async (testId: number) => {
+    try {
+      await deleteTestMutation.mutateAsync(testId);
+    } catch (error) {
+      // Error handling is done in the mutation onError
+    }
   };
 
   const getFlagColor = (flag: string) => {
@@ -99,16 +141,7 @@ export default function Reports() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Test Message - Remove this after confirming changes work */}
-      <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
-        <strong>✅ REPORTS PAGE UPDATED!</strong> This message confirms the changes are working. You should now see:
-        <ul className="mt-2 list-disc list-inside">
-          <li>Patient selection dropdown</li>
-          <li>Test type selection dropdown</li>
-          <li>Search functionality</li>
-          <li>Total results count</li>
-        </ul>
-      </div>
+
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -138,8 +171,8 @@ export default function Reports() {
                 <SelectTrigger>
                   <SelectValue placeholder="Select patient" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Patients</SelectItem>
+                 <SelectContent>
+                  <SelectItem value="all">All Patients</SelectItem>
                   {patients.map((patient) => (
                     <SelectItem key={patient.id} value={patient.id.toString()}>
                       {patient.patientId} - {patient.name}
@@ -204,11 +237,17 @@ export default function Reports() {
       )}
 
       {/* Test Reports by Type */}
-      {isLoading ? (
+       {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
-      ) : Object.keys(testsByType).length === 0 ? (
+       ) : error ? (
+         <Card>
+           <CardContent className="text-center py-12 text-red-600">
+             Failed to load reports
+           </CardContent>
+         </Card>
+       ) : Object.keys(testsByType).length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
@@ -287,15 +326,48 @@ export default function Reports() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewTest(test)}
-                            className="flex items-center gap-1"
-                          >
-                            <Eye className="h-3 w-3" />
-                            View Report
-                          </Button>
+                          <div className="flex items-center gap-2 justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewTest(test)}
+                              className="flex items-center gap-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              View Report
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 hover:border-red-300"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Test Report</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete test report <strong>{test.testId}</strong> for patient <strong>{test.patient?.patientId} - {test.patient?.name}</strong>? 
+                                    <br /><br />
+                                    This action cannot be undone and will permanently remove the test report from the system.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteTest(test.id)}
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                    disabled={deleteTestMutation.isPending}
+                                  >
+                                    {deleteTestMutation.isPending ? "Deleting..." : "Delete Report"}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

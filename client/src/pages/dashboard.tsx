@@ -16,6 +16,7 @@ import {
   Thermometer,
   FlaskConical
 } from "lucide-react";
+import Logo from "@/components/brand/logo";
 
 interface DashboardStats {
   todayTests: number;
@@ -92,9 +93,12 @@ export default function Dashboard() {
   return (
     <div className="p-8">
       {/* Welcome Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">Welcome back, Admin</h1>
-        <p className="text-slate-600">Here's what's happening in your lab today.</p>
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Welcome back, Admin</h1>
+          <p className="text-slate-600">Here's what's happening in your lab today.</p>
+        </div>
+        <Logo className="h-10 w-auto hidden sm:block" />
       </div>
 
       {/* Stats Cards */}

@@ -7,8 +7,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, Eye, EyeOff, TestTube2, ShieldCheck } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import ChangePasswordModal from "@/components/auth/change-password-modal";
+import Logo from "@/components/brand/logo";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -53,10 +54,10 @@ export default function Login() {
           <CardContent className="pt-8 p-8">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="mx-auto h-16 w-16 medical-gradient rounded-full flex items-center justify-center mb-4">
-                <TestTube2 className="h-8 w-8 text-white" />
+              <div className="mx-auto mb-4">
+                <Logo className="h-16 w-auto mx-auto" />
               </div>
-              <h2 className="text-3xl font-bold text-slate-800">Laboratory Management</h2>
+              <h2 className="text-3xl font-bold text-slate-800">AL-QASIM Clinic & Lab</h2>
               <p className="text-slate-600 mt-2">Secure Admin Access</p>
             </div>
 

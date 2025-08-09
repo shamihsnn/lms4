@@ -13,16 +13,24 @@ declare module 'express-session' {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Ensure Express trusts proxy headers when deployed behind a proxy
+  // and allow cookie settings to be controlled via env for local prod runs
+  app.set("trust proxy", 1);
   // Initialize Supabase storage
   const storage = new SupabaseStorage();
 
   // Session configuration
+  // In local production (npm run start over http://localhost), a secure cookie will not be sent by the browser.
+  // Control this behavior via COOKIE_SECURE env. Default is false for local, true only when explicitly enabled.
+  const useSecureCookie = (process.env.COOKIE_SECURE || "false").toLowerCase() === "true";
   app.use(session({
     secret: process.env.SESSION_SECRET || 'lab-management-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: useSecureCookie,
+      // SameSite must be 'none' only when secure cookies are used, otherwise use 'lax' for local
+      sameSite: (useSecureCookie ? 'none' : 'lax'),
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
@@ -172,6 +180,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/patients/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deletePatient(parseInt(id));
+      res.json({ message: "Patient deleted successfully" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
   app.get("/api/patients/next-id", requireAuth, async (req, res) => {
     try {
       const nextId = await storage.getNextPatientId();
@@ -213,6 +231,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(tests);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/tests/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTest(parseInt(id));
+      res.json({ message: "Test deleted successfully" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
 
