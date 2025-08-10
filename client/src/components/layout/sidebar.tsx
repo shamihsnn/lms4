@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import { 
   LayoutDashboard, 
   Users, 
@@ -15,9 +16,11 @@ import {
   Brain,
   Eye,
   Thermometer,
-  FlaskConical
+  FlaskConical,
+  KeyRound
 } from "lucide-react";
 import Logo from "@/components/brand/logo";
+import ChangePasswordModal from "@/components/auth/change-password-modal";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -61,6 +64,7 @@ export default function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -148,6 +152,19 @@ export default function Sidebar() {
               <p className="text-sm font-medium text-slate-800">{user?.username || 'Admin'}</p>
             </div>
           </div>
+          
+          {/* Change Password Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsChangePasswordOpen(true)}
+            className="w-full justify-start text-slate-600 hover:text-slate-800 mb-2"
+          >
+            <KeyRound className="h-4 w-4 mr-2" />
+            Change Password
+          </Button>
+          
+          {/* Sign Out Button */}
           <Button
             variant="ghost"
             size="sm"
@@ -159,6 +176,12 @@ export default function Sidebar() {
           </Button>
         </div>
       </div>
+      
+      {/* Change Password Modal */}
+      <ChangePasswordModal 
+        isOpen={isChangePasswordOpen} 
+        onClose={() => setIsChangePasswordOpen(false)} 
+      />
     </div>
   );
 }

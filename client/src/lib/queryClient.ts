@@ -12,13 +12,34 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  console.log(`Making ${method} request to ${url}`);
+  console.log('Request data:', data);
+  
+  const headers: Record<string, string> = {
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache"
+  };
+  
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 
+  console.log(`Response status: ${res.status}`);
+  console.log('Response headers:', Object.fromEntries(res.headers.entries()));
+  
+  if (res.status === 401) {
+    console.error('Authentication failed - session may be expired');
+    // Clear any cached user data
+    queryClient.setQueryData(["/api/auth/me"], null);
+  }
+  
   await throwIfResNotOk(res);
   return res;
 }

@@ -38,7 +38,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
-    if (!req.session.adminId) {
+    console.log('Auth check - Session ID:', req.sessionID);
+    console.log('Auth check - Admin ID:', req.session?.adminId);
+    console.log('Auth check - Session:', req.session);
+    
+    if (!req.session || !req.session.adminId) {
+      console.log('Authentication failed - no valid session');
       return res.status(401).json({ message: "Authentication required" });
     }
     next();
@@ -89,6 +94,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Could not log out" });
       }
       res.json({ message: "Logout successful" });
+    });
+  });
+
+  // Session validation endpoint (without auth middleware for debugging)
+  app.get("/api/auth/session-info", (req, res) => {
+    res.json({
+      hasSession: !!req.session,
+      sessionId: req.sessionID,
+      adminId: req.session?.adminId,
+      username: req.session?.username,
+      cookieSettings: {
+        secure: req.session?.cookie?.secure,
+        httpOnly: req.session?.cookie?.httpOnly,
+        sameSite: req.session?.cookie?.sameSite,
+        maxAge: req.session?.cookie?.maxAge
+      }
+    });
+  });
+
+  // Session refresh endpoint
+  app.post("/api/auth/refresh-session", (req, res) => {
+    if (!req.session || !req.session.adminId) {
+      return res.status(401).json({ message: "No valid session to refresh" });
+    }
+    
+    // Touch the session to extend its lifetime
+    req.session.touch();
+    
+    res.json({ 
+      message: "Session refreshed",
+      sessionId: req.sessionID,
+      adminId: req.session.adminId
     });
   });
 
