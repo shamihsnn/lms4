@@ -36,6 +36,7 @@ import HIVTest from "@/pages/tests/hiv";
 import CreatinineTest from "@/pages/tests/creatinine";
 import BilirubinTest from "@/pages/tests/bilirubin";
 import HBsAgTest from "@/pages/tests/hbsag";
+import CustomBuilder from "@/pages/tests/custom-builder";
 import Sidebar from "@/components/layout/sidebar";
 import NotFound from "@/pages/not-found";
 
@@ -93,6 +94,7 @@ function AppContent() {
           <Route path="/tests/creatinine" component={CreatinineTest} />
           <Route path="/tests/bilirubin" component={BilirubinTest} />
           <Route path="/tests/hbsag" component={HBsAgTest} />
+          <Route path="/tests/custom-builder" component={CustomBuilder} />
           <Route component={NotFound} />
         </Switch>
       </div>

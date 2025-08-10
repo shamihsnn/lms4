@@ -202,6 +202,13 @@ const testTypes = [
     description: "Hep B surface antigen",
     color: "bg-cyan-100 text-cyan-600"
   },
+  { 
+    name: "Custom Builder", 
+    href: "/tests/custom-builder", 
+    icon: FlaskConical, 
+    description: "Define your own tests",
+    color: "bg-slate-100 text-slate-700"
+  },
 ];
 
 export default function TestNavigation() {

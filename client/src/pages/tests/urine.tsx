@@ -14,18 +14,33 @@ import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
 const urineParameters = [
+  // Physical Examination
   { name: "color", label: "Color", unit: "", normalRange: "Pale Yellow", step: "", type: "text" },
   { name: "appearance", label: "Appearance", unit: "", normalRange: "Clear", step: "", type: "text" },
   { name: "specificGravity", label: "Specific Gravity", unit: "", normalRange: "1.003-1.030", step: "0.001", type: "number" },
+  { name: "turbidity", label: "Turbidity", unit: "", normalRange: "Nil", step: "", type: "text" },
+  
+  // Chemical Examination
   { name: "ph", label: "pH", unit: "", normalRange: "4.6-8.0", step: "0.1", type: "number" },
+  { name: "sugar", label: "Sugar", unit: "", normalRange: "Nil", step: "", type: "text" },
+  { name: "ketones", label: "Ketone", unit: "", normalRange: "Nil", step: "", type: "text" },
   { name: "protein", label: "Protein", unit: "mg/dL", normalRange: "Negative", step: "1", type: "text" },
   { name: "glucose", label: "Glucose", unit: "mg/dL", normalRange: "Negative", step: "1", type: "text" },
-  { name: "ketones", label: "Ketones", unit: "", normalRange: "Negative", step: "", type: "text" },
   { name: "blood", label: "Blood", unit: "", normalRange: "Negative", step: "", type: "text" },
   { name: "bilirubin", label: "Bilirubin", unit: "", normalRange: "Negative", step: "", type: "text" },
   { name: "urobilinogen", label: "Urobilinogen", unit: "mg/dL", normalRange: "0.2-1.0", step: "0.1", type: "number" },
   { name: "nitrites", label: "Nitrites", unit: "", normalRange: "Negative", step: "", type: "text" },
   { name: "leukocytes", label: "Leukocytes", unit: "", normalRange: "Negative", step: "", type: "text" },
+  { name: "deposit", label: "Deposit", unit: "", normalRange: "Nil", step: "", type: "text" },
+  
+  // Microscopic Examination
+  { name: "pusCells", label: "Pus Cells", unit: "/hpf", normalRange: "0-4", step: "1", type: "number" },
+  { name: "redBloodCells", label: "Red Blood Cells", unit: "/hpf", normalRange: "0-1", step: "1", type: "number" },
+  { name: "epithelialCells", label: "Epithelial Cells", unit: "/hpf", normalRange: "0-5", step: "1", type: "number" },
+  { name: "casts", label: "Casts", unit: "", normalRange: "Nil", step: "", type: "text" },
+  { name: "crystals", label: "Crystals", unit: "", normalRange: "Nil", step: "", type: "text" },
+  { name: "amorphous", label: "Amorphous", unit: "", normalRange: "Nil", step: "", type: "text" },
+  { name: "organisms", label: "Organisms", unit: "", normalRange: "Nil", step: "", type: "text" },
 ];
 
 export default function UrineTest() {

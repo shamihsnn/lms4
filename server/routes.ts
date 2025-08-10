@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { SupabaseStorage } from "./supabase-storage";
 import bcrypt from "bcryptjs";
 import session from "express-session";
-import { loginSchema, changePasswordSchema, insertPatientSchema, insertTestSchema } from "@shared/schema";
+import { loginSchema, changePasswordSchema, insertPatientSchema, insertTestSchema, insertTestTemplateSchema } from "@shared/schema";
 
 declare module 'express-session' {
   interface SessionData {
@@ -202,6 +202,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/patients", requireAuth, async (req, res) => {
     try {
       const patientData = insertPatientSchema.parse(req.body);
+      
+      // Check if patient ID already exists
+      const existingPatient = await storage.getPatientByPatientId(patientData.patientId);
+      if (existingPatient) {
+        return res.status(400).json({ message: "Patient ID already exists" });
+      }
+      
       patientData.createdBy = req.session.adminId;
       patientData.modifiedBy = req.session.adminId;
       
@@ -277,11 +284,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tests", requireAuth, async (req, res) => {
     try {
       const testData = insertTestSchema.parse(req.body);
+      
+      // Check if test ID already exists
+      const existingTest = await storage.getTestByTestId(testData.testId);
+      if (existingTest) {
+        return res.status(400).json({ message: "Test ID already exists" });
+      }
+      
       testData.performedBy = req.session.adminId;
       testData.modifiedBy = req.session.adminId;
       
       const test = await storage.createTest(testData);
       res.json(test);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Test templates (builder)
+  app.get("/api/test-templates", requireAuth, async (_req, res) => {
+    try {
+      const templates = await storage.getAllTestTemplates();
+      res.json(templates);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/test-templates/:testType", requireAuth, async (req, res) => {
+    try {
+      const { testType } = req.params;
+      const template = await storage.getTestTemplateByType(testType);
+      if (!template) return res.status(404).json({ message: "Template not found" });
+      res.json(template);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/test-templates", requireAuth, async (req, res) => {
+    try {
+      const templateData = insertTestTemplateSchema.parse(req.body);
+      const saved = await storage.upsertTestTemplate(templateData);
+      res.json(saved);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }

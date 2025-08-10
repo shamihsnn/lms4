@@ -1,6 +1,6 @@
 import { eq, desc, and, gte } from "drizzle-orm";
 import { db } from "./database";
-import { adminUsers, patients, tests, idChangeLog, type AdminUser, type InsertAdminUser, type Patient, type InsertPatient, type Test, type InsertTest, type IdChangeLog, type InsertIdChangeLog } from "@shared/schema";
+import { adminUsers, patients, tests, idChangeLog, testTemplates, type AdminUser, type InsertAdminUser, type Patient, type InsertPatient, type Test, type InsertTest, type IdChangeLog, type InsertIdChangeLog, type TestTemplate, type InsertTestTemplate } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import type { IStorage } from "./storage";
 
@@ -132,19 +132,32 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getNextPatientId(): Promise<string> {
-    const result = await db.select({ patientId: patients.patientId })
-      .from(patients)
-      .orderBy(desc(patients.id))
-      .limit(1);
-
-    if (result.length === 0) {
-      return "PAT001";
+    // Pretty format: PAT-YYYY-NNNN
+    const year = String(new Date().getFullYear());
+    const prefix = `PAT-${year}-`;
+    
+    // Get all patients to check for existing IDs
+    const allPatients = await db.select({ patientId: patients.patientId })
+      .from(patients);
+    
+    let maxSeq = 0;
+    
+    // Check for new format IDs first
+    for (const row of allPatients) {
+      const pid = row.patientId || "";
+      if (pid.startsWith(prefix)) {
+        const tail = pid.slice(prefix.length);
+        const m = tail.match(/^(\d{4})$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxSeq) maxSeq = n;
+        }
+      }
     }
-
-    const lastId = result[0].patientId;
-    const match = lastId.match(/PAT(\d+)/);
-    const nextNum = match ? parseInt(match[1]) + 1 : 1;
-    return `PAT${String(nextNum).padStart(3, '0')}`;
+    
+    // If no new format IDs found, start from 0001
+    const next = String(maxSeq + 1).padStart(4, '0');
+    return `${prefix}${next}`;
   }
 
   async updatePatientId(id: number, newPatientId: string, adminId: number): Promise<void> {
@@ -281,19 +294,34 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getNextTestId(): Promise<string> {
-    const result = await db.select({ testId: tests.testId })
-      .from(tests)
-      .orderBy(desc(tests.id))
-      .limit(1);
-
-    if (result.length === 0) {
-      return "TEST001";
+    // Pretty format: TST-YYYYMM-NNNN
+    const now = new Date();
+    const yyyy = String(now.getFullYear());
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const prefix = `TST-${yyyy}${mm}-`;
+    
+    // Get all tests to check for existing IDs
+    const allTests = await db.select({ testId: tests.testId })
+      .from(tests);
+    
+    let maxSeq = 0;
+    
+    // Check for new format IDs first
+    for (const row of allTests) {
+      const tid = row.testId || "";
+      if (tid.startsWith(prefix)) {
+        const tail = tid.slice(prefix.length);
+        const m = tail.match(/^(\d{4})$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxSeq) maxSeq = n;
+        }
+      }
     }
-
-    const lastId = result[0].testId;
-    const match = lastId.match(/TEST(\d+)/);
-    const nextNum = match ? parseInt(match[1]) + 1 : 1;
-    return `TEST${String(nextNum).padStart(3, '0')}`;
+    
+    // If no new format IDs found, start from 0001
+    const next = String(maxSeq + 1).padStart(4, '0');
+    return `${prefix}${next}`;
   }
 
   async updateTestId(id: number, newTestId: string, adminId: number): Promise<void> {
@@ -382,5 +410,28 @@ export class SupabaseStorage implements IStorage {
     }
     
     return criticalCount;
+  }
+
+  // Test templates
+  async getAllTestTemplates(): Promise<TestTemplate[]> {
+    return await db.select().from(testTemplates).orderBy(desc(testTemplates.createdAt));
+  }
+
+  async getTestTemplateByType(testType: string): Promise<TestTemplate | undefined> {
+    const result = await db.select().from(testTemplates).where(eq(testTemplates.testType, testType)).limit(1);
+    return result[0];
+  }
+
+  async upsertTestTemplate(template: InsertTestTemplate): Promise<TestTemplate> {
+    const existing = await this.getTestTemplateByType(template.testType);
+    if (existing) {
+      const updated = await db.update(testTemplates)
+        .set({ parameters: template.parameters })
+        .where(eq(testTemplates.id, (existing as any).id))
+        .returning();
+      return updated[0] as TestTemplate;
+    }
+    const inserted = await db.insert(testTemplates).values(template).returning();
+    return inserted[0] as TestTemplate;
   }
 }

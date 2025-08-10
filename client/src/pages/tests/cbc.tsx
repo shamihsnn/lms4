@@ -20,6 +20,14 @@ const cbcParameters = [
   { name: "hematocrit", label: "Hematocrit", unit: "%", normalRange: "38.8-50.0", step: "0.1" },
   { name: "platelets", label: "Platelets", unit: "×10³/μL", normalRange: "150-450", step: "1" },
   { name: "mcv", label: "MCV", unit: "fL", normalRange: "82-98", step: "0.1" },
+  // Additional parameters from the haematology report
+  { name: "neutrophils", label: "Neutrophils", unit: "%", normalRange: "45-70", step: "0.1" },
+  { name: "lymphocytes", label: "Lymphocytes", unit: "%", normalRange: "20-40", step: "0.1" },
+  { name: "monocytes", label: "Monocytes", unit: "%", normalRange: "2-7", step: "0.1" },
+  { name: "eosinophils", label: "Eosinophils", unit: "%", normalRange: "1-4", step: "0.1" },
+  { name: "hct", label: "HCT", unit: "%", normalRange: "40-54", step: "0.1" },
+  { name: "mch", label: "MCH", unit: "pg", normalRange: "27-32", step: "0.1" },
+  { name: "mchc", label: "MCHC", unit: "%", normalRange: "31-35", step: "0.1" },
 ];
 
 export default function CBCTest() {
@@ -200,7 +208,78 @@ export default function CBCTest() {
     });
   };
 
-  // legacy generator removed in favor of printLabReport
+  // Group parameters for better organization
+  const basicParameters = cbcParameters.slice(0, 6);
+  const differentialParameters = cbcParameters.filter(p => 
+    ['neutrophils', 'lymphocytes', 'monocytes', 'eosinophils'].includes(p.name)
+  );
+  const additionalParameters = cbcParameters.filter(p => 
+    ['hct', 'mch', 'mchc'].includes(p.name)
+  );
+
+  const renderParameterGroup = (parameters: typeof cbcParameters, title: string) => (
+    <div className="space-y-4">
+      <h4 className="text-md font-semibold text-slate-700 border-l-4 border-blue-500 pl-3">
+        {title}
+      </h4>
+      <div className="grid gap-4">
+        {parameters.map((param) => {
+          const currentValue = formData.results[param.name] || "";
+          const flag = getFlag(param.name, currentValue);
+          const flagColor = getFlagColor(flag);
+          
+          return (
+            <div key={param.name} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
+                {/* Parameter Name */}
+                <div className="lg:col-span-1">
+                  <Label className="text-sm font-medium text-slate-700">
+                    {param.label}
+                  </Label>
+                </div>
+                
+                {/* Normal Range */}
+                <div className="lg:col-span-1">
+                  <div className="text-sm text-slate-600">
+                    <span className="font-medium">Normal Range:</span>
+                    <div className="text-blue-600 font-semibold">
+                      {param.normalRange} {param.unit}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Result Input */}
+                <div className="lg:col-span-1">
+                  <div className="flex">
+                    <Input
+                      type="number"
+                      step={param.step}
+                      value={currentValue}
+                      onChange={(e) => handleResultChange(param.name, e.target.value)}
+                      className="flex-1 rounded-r-none text-center font-medium"
+                      placeholder="Enter result"
+                    />
+                    <span className="px-3 py-2 bg-white border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600 font-medium">
+                      {param.unit}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Flag Status */}
+                <div className="lg:col-span-1">
+                  {flag && (
+                    <div className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${flagColor}`}>
+                      {flag}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-8">
@@ -257,65 +336,13 @@ export default function CBCTest() {
               </div>
             </div>
 
-            {/* CBC Parameters */}
-            <div className="space-y-6">
+            {/* CBC Parameters - Organized in groups */}
+            <div className="space-y-8">
               <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Test Parameters</h3>
-              <div className="grid gap-4">
-                {cbcParameters.map((param) => {
-                  const currentValue = formData.results[param.name] || "";
-                  const flag = getFlag(param.name, currentValue);
-                  const flagColor = getFlagColor(flag);
-                  
-                  return (
-                    <div key={param.name} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
-                        {/* Parameter Name */}
-                        <div className="lg:col-span-1">
-                          <Label className="text-sm font-medium text-slate-700">
-                            {param.label}
-                          </Label>
-                        </div>
-                        
-                        {/* Normal Range */}
-                        <div className="lg:col-span-1">
-                          <div className="text-sm text-slate-600">
-                            <span className="font-medium">Normal Range:</span>
-                            <div className="text-blue-600 font-semibold">
-                              {param.normalRange} {param.unit}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Result Input */}
-                        <div className="lg:col-span-1">
-                          <div className="flex">
-                            <Input
-                              type="number"
-                              step={param.step}
-                              value={currentValue}
-                              onChange={(e) => handleResultChange(param.name, e.target.value)}
-                              className="flex-1 rounded-r-none text-center font-medium"
-                              placeholder="Enter result"
-                            />
-                            <span className="px-3 py-2 bg-white border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600 font-medium">
-                              {param.unit}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Flag Status */}
-                        <div className="lg:col-span-1">
-                          {flag && (
-                            <div className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${flagColor}`}>
-                              {flag}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              
+              {renderParameterGroup(basicParameters, "Basic Parameters")}
+              {renderParameterGroup(differentialParameters, "Differential Count")}
+              {renderParameterGroup(additionalParameters, "Additional Indices")}
             </div>
 
             {/* Comments */}

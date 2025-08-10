@@ -1,4 +1,4 @@
-import { type AdminUser, type InsertAdminUser, type Patient, type InsertPatient, type Test, type InsertTest, type IdChangeLog, type InsertIdChangeLog } from "@shared/schema";
+import { type AdminUser, type InsertAdminUser, type Patient, type InsertPatient, type Test, type InsertTest, type IdChangeLog, type InsertIdChangeLog, type TestTemplate, type InsertTestTemplate } from "@shared/schema";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 
@@ -41,6 +41,11 @@ export interface IStorage {
   getTotalPatientsCount(): Promise<number>;
   getPendingReportsCount(): Promise<number>;
   getCriticalResultsCount(): Promise<number>;
+
+  // Test templates
+  getAllTestTemplates(): Promise<TestTemplate[]>;
+  getTestTemplateByType(testType: string): Promise<TestTemplate | undefined>;
+  upsertTestTemplate(template: InsertTestTemplate): Promise<TestTemplate>;
 }
 
 export class MemStorage implements IStorage {
@@ -48,6 +53,8 @@ export class MemStorage implements IStorage {
   private patients: Map<number, Patient>;
   private tests: Map<number, Test>;
   private idChangeLogs: Map<number, IdChangeLog>;
+  private testTemplates: Map<number, TestTemplate>;
+  private testTemplatesByType: Map<string, number>;
   private nextId: number;
 
   constructor() {
@@ -55,6 +62,8 @@ export class MemStorage implements IStorage {
     this.patients = new Map();
     this.tests = new Map();
     this.idChangeLogs = new Map();
+    this.testTemplates = new Map();
+    this.testTemplatesByType = new Map();
     this.nextId = 1;
 
     // Create default admin user
@@ -171,12 +180,23 @@ export class MemStorage implements IStorage {
   }
 
   async getNextPatientId(): Promise<string> {
-    const patients = Array.from(this.patients.values());
-    const maxNum = patients.reduce((max, patient) => {
-      const match = patient.patientId.match(/PAT(\d+)/);
-      return match ? Math.max(max, parseInt(match[1])) : max;
-    }, 0);
-    return `PAT${String(maxNum + 1).padStart(3, '0')}`;
+    const now = new Date();
+    const year = String(now.getFullYear());
+    const prefix = `PAT-${year}-`;
+    let maxSeq = 0;
+    for (const p of this.patients.values()) {
+      const pid = p.patientId || "";
+      if (pid.startsWith(prefix)) {
+        const tail = pid.slice(prefix.length);
+        const m = tail.match(/^(\d{4})$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxSeq) maxSeq = n;
+        }
+      }
+    }
+    const next = String(maxSeq + 1).padStart(4, '0');
+    return `${prefix}${next}`;
   }
 
   async updatePatientId(id: number, newPatientId: string, adminId: number): Promise<void> {
@@ -271,12 +291,24 @@ export class MemStorage implements IStorage {
   }
 
   async getNextTestId(): Promise<string> {
-    const tests = Array.from(this.tests.values());
-    const maxNum = tests.reduce((max, test) => {
-      const match = test.testId.match(/TEST(\d+)/);
-      return match ? Math.max(max, parseInt(match[1])) : max;
-    }, 0);
-    return `TEST${String(maxNum + 1).padStart(3, '0')}`;
+    const now = new Date();
+    const yyyy = String(now.getFullYear());
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const prefix = `TST-${yyyy}${mm}-`;
+    let maxSeq = 0;
+    for (const t of this.tests.values()) {
+      const tid = t.testId || "";
+      if (tid.startsWith(prefix)) {
+        const tail = tid.slice(prefix.length);
+        const m = tail.match(/^(\d{4})$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxSeq) maxSeq = n;
+        }
+      }
+    }
+    const next = String(maxSeq + 1).padStart(4, '0');
+    return `${prefix}${next}`;
   }
 
   async updateTestId(id: number, newTestId: string, adminId: number): Promise<void> {
@@ -350,6 +382,39 @@ export class MemStorage implements IStorage {
       const flags = test.flags as any;
       return flags && Object.values(flags).some((flag: any) => flag === "CRITICAL");
     }).length;
+  }
+
+  // Test templates
+  async getAllTestTemplates(): Promise<TestTemplate[]> {
+    return Array.from(this.testTemplates.values());
+  }
+
+  async getTestTemplateByType(testType: string): Promise<TestTemplate | undefined> {
+    const id = this.testTemplatesByType.get(testType);
+    if (id === undefined) return undefined;
+    return this.testTemplates.get(id);
+  }
+
+  async upsertTestTemplate(insertTemplate: InsertTestTemplate): Promise<TestTemplate> {
+    const existingId = this.testTemplatesByType.get(insertTemplate.testType);
+    if (existingId !== undefined) {
+      const existing = this.testTemplates.get(existingId);
+      const updated: TestTemplate = {
+        ...existing!,
+        ...insertTemplate,
+      } as TestTemplate;
+      this.testTemplates.set(existingId, updated);
+      return updated;
+    }
+    const id = this.nextId++;
+    const template: TestTemplate = {
+      ...insertTemplate,
+      id,
+      createdAt: new Date(),
+    } as TestTemplate;
+    this.testTemplates.set(id, template);
+    this.testTemplatesByType.set(template.testType, id);
+    return template;
   }
 }
 

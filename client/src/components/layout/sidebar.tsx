@@ -54,6 +54,7 @@ const testNavigation = [
   { name: "Creatinine", href: "/tests/creatinine", icon: FlaskConical },
   { name: "Bilirubin", href: "/tests/bilirubin", icon: FlaskConical },
   { name: "HBsAg", href: "/tests/hbsag", icon: Thermometer },
+  { name: "Custom Builder", href: "/tests/custom-builder", icon: FlaskConical },
 ];
 
 export default function Sidebar() {
@@ -83,7 +84,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="flex items-center px-6 py-4 border-b border-slate-200">
           <Logo className="h-11 w-auto" />
-          <span className="ml-3 font-semibold text-slate-800">AL-QASIM</span>
+          <span className="ml-3 font-semibold text-slate-800">AL-QASIM Labs</span>
         </div>
 
         {/* Navigation Menu */}

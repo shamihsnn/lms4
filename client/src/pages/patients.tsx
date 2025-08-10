@@ -50,14 +50,19 @@ export default function Patients() {
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/patients/next-id"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      setFormData({
-        patientId: "",
-        name: "",
-        age: "",
-        gender: "",
-        phone: "",
-        address: "",
-      });
+      
+      // Reset form after a small delay to ensure next ID is fetched
+      setTimeout(() => {
+        setFormData({
+          patientId: "",
+          name: "",
+          age: "",
+          gender: "",
+          phone: "",
+          address: "",
+        });
+      }, 100);
+      
       toast({
         title: "Patient registered successfully",
         description: "New patient has been added to the system",
@@ -103,12 +108,12 @@ export default function Patients() {
     },
   });
 
-  // Set initial patient ID when component loads
+  // Set initial patient ID when component loads or when next ID changes
   useEffect(() => {
-    if (nextIdData?.nextId && !formData.patientId) {
+    if (nextIdData?.nextId) {
       setFormData(prev => ({ ...prev, patientId: nextIdData.nextId }));
     }
-  }, [nextIdData, formData.patientId]);
+  }, [nextIdData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
