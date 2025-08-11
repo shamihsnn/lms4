@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Edit3, Printer } from "lucide-react";
+import { Edit3, Printer, Check, X } from "lucide-react";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
+import { useEditableRanges } from "@/hooks/use-editable-ranges";
+import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
 const param = { name: "creatinine", label: "Serum Creatinine", unit: "mg/dL", normalRange: "0.7-1.3", step: "0.01" } as const;
 
@@ -21,6 +23,22 @@ export default function CreatinineTest() {
   const { toast } = useToast();
   const { data: nextIdData } = useQuery<{ nextId: string }>({ queryKey: ["/api/tests/next-id"] });
   const { data: patients = [] } = useQuery<Patient[]>({ queryKey: ["/api/patients"] });
+
+  // Editable ranges/flags for single parameter
+  const {
+    rangeOverrides,
+    setRangeOverrides,
+    flagOverrides,
+    setFlagOverrides,
+    editingRange,
+    setEditingRange,
+    editingFlag,
+    setEditingFlag,
+    getFlag,
+    getFlagColor,
+    calculateFlags,
+    getNormalRanges,
+  } = useEditableRanges([param]);
 
   const createTestMutation = useMutation({
     mutationFn: async (data: InsertTest) => { const res = await apiRequest("POST", "/api/tests", data); return res.json(); },
@@ -41,20 +59,16 @@ export default function CreatinineTest() {
     if (!formData.testId || !formData.patientId) { toast({ title: "Validation Error", description: "Test ID and Patient are required", variant: "destructive" }); return; }
     const patient = patients.find(p => p.patientId === formData.patientId);
     if (!patient) { toast({ title: "Patient Not Found", description: "Selected patient not found", variant: "destructive" }); return; }
-    const v = parseFloat(formData.value);
-    const [min, max] = param.normalRange.split('-').map(parseFloat);
-    const flags = { [param.name]: isNaN(v) ? "" : v < min ? "LOW" : v > max ? "HIGH" : "NORMAL" } as Record<string, string>;
-    const normalRanges = { [param.name]: `${param.normalRange} ${param.unit}` } as Record<string, string>;
+    const flags = calculateFlags({ [param.name]: formData.value });
+    const normalRanges = getNormalRanges();
     await createTestMutation.mutateAsync({ testId: formData.testId, patientId: patient.id, testType: "Creatinine", testResults: { [param.name]: formData.value }, normalRanges, flags, status: "completed", performedBy: undefined, modifiedBy: undefined });
   };
 
   const handlePrint = () => {
     const patient = patients.find(p => p.patientId === formData.patientId);
     const value = formData.value || "";
-    const v = parseFloat(value);
-    const [min, max] = param.normalRange.split('-').map(parseFloat);
-    const flag: ReportRow["flag"] = isNaN(v) ? "" : v < min ? "LOW" : v > max ? "HIGH" : "NORMAL";
-    const rows: ReportRow[] = [{ parameterLabel: param.label, value, unit: param.unit, normalRange: `${param.normalRange} ${param.unit}`, flag }];
+    const flag = getFlag(param.name, value) as ReportRow["flag"];
+    const rows: ReportRow[] = [{ parameterLabel: param.label, value, unit: param.unit, normalRange: `${(rangeOverrides[param.name] ?? param.normalRange)} ${param.unit}`, flag }];
     printLabReport({ reportTitle: "FINAL REPORT", testId: formData.testId, testType: "Creatinine", patient, rows, comments: formData.comments, minimal: true });
   };
 
@@ -90,14 +104,48 @@ export default function CreatinineTest() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div>
-                <Label className="block text-sm font-medium text-slate-700 mb-2">{param.label}</Label>
-                <div className="flex">
-                  <Input type="number" step={param.step} value={formData.value} onChange={(e) => setFormData(p => ({ ...p, value: e.target.value }))} className="flex-1 rounded-r-none" placeholder={param.normalRange} />
-                  <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">{param.unit}</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Normal: {param.normalRange} {param.unit}</p>
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Test Parameters</h3>
+              <div className="grid gap-4">
+                {(() => {
+                  const currentValue = formData.value || "";
+                  const flag = getFlag(param.name, currentValue);
+                  const flagColor = getFlagColor(flag);
+                  const currentRange = rangeOverrides[param.name] ?? param.normalRange;
+                  const isEditingRange = !!editingRange[param.name];
+                  const isEditingFlag = !!editingFlag[param.name];
+                  return (
+                    <EditableParameterRow
+                      key={param.name}
+                      param={param}
+                      currentValue={currentValue}
+                      onResultChange={(name, v) => setFormData(p => ({ ...p, value: v }))}
+                      currentRange={currentRange}
+                      isEditingRange={isEditingRange}
+                      onRangeEdit={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: true }))}
+                      onRangeChange={(paramName, range) => setRangeOverrides(prev => ({ ...prev, [paramName]: range }))}
+                      onRangeSave={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: false }))}
+                      onRangeCancel={(paramName) => {
+                        setRangeOverrides(prev => ({ ...prev, [paramName]: param.normalRange }));
+                        setEditingRange(prev => ({ ...prev, [paramName]: false }));
+                      }}
+                      flag={flag}
+                      flagColor={flagColor}
+                      isEditingFlag={isEditingFlag}
+                      onFlagEdit={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: true }))}
+                      onFlagChange={(paramName, flagValue) => setFlagOverrides(prev => ({ ...prev, [paramName]: flagValue }))}
+                      onFlagSave={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: false }))}
+                      onFlagCancel={(paramName) => {
+                        setFlagOverrides(prev => {
+                          const clone = { ...prev };
+                          delete clone[paramName];
+                          return clone;
+                        });
+                        setEditingFlag(prev => ({ ...prev, [paramName]: false }));
+                      }}
+                    />
+                  );
+                })()}
               </div>
             </div>
 

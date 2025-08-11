@@ -16,10 +16,10 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 // Reference ranges (adults, typical lab ranges; may vary by method)
 const coagParams = [
   { name: "pt", label: "Prothrombin Time (PT)", unit: "sec", normalRange: "11-13.5" },
-  { name: "inr", label: "INR", unit: "", normalRange: "0.8-1.1" },
-  { name: "aptt", label: "Activated Partial Thromboplastin Time (aPTT)", unit: "sec", normalRange: "30-40" },
+  { name: "inr", label: "INR", unit: "", normalRange: "0.8-1.2" },
+  { name: "aptt", label: "Activated Partial Thromboplastin Time (aPTT)", unit: "sec", normalRange: "28-40" },
   { name: "bleedingTime", label: "Bleeding Time", unit: "min", normalRange: "2-7" },
-  { name: "clottingTime", label: "Clotting Time", unit: "min", normalRange: "5-15" },
+  { name: "clottingTime", label: "Clotting Time", unit: "min", normalRange: "5-10" },
 ];
 
 export default function CoagulationTest() {

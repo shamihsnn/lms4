@@ -72,11 +72,11 @@ export function printLabReport(options: {
       <meta charset="utf-8" />
       <title>${reportTitle} - ${testId}</title>
       <style>
-        @page { size: A4; margin: 16mm; }
-        body { font-family: Arial, Helvetica, sans-serif; color: #111827; }
-        .header { margin-bottom: 12px; }
-        .title { font-weight: 800; font-size: 16px; text-align: center; }
-        .meta { margin-top: 6px; font-size: 11px; color: #374151; text-align: center; }
+        @page { size: A4; margin: 45mm 16mm 16mm 16mm; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 13px; }
+        .header { display: none; }
+        .title { display: none; }
+        .meta { display: none; }
         
         .patient-info {
           background: #f8fafc;
@@ -89,7 +89,7 @@ export function printLabReport(options: {
           display: flex;
           justify-content: space-between;
           margin-bottom: 4px;
-          font-size: 12px;
+          font-size: 12.5px;
         }
         .patient-row:last-child {
           margin-bottom: 0;
@@ -114,23 +114,25 @@ export function printLabReport(options: {
         .info { display: ${minimal ? "none" : "grid"}; }
         .section-title { display: ${minimal ? "none" : "block"}; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; font-size: 12px; }
-        thead th { background: #f9fafb; text-align: left; font-weight: 700; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; font-size: 13px; }
+        thead th { background: #f9fafb; text-align: left; font-weight: 700; font-size: 13.5px; }
         .value { font-weight: 600; }
         .flag-normal { color: #16a34a; }
         .flag-high { color: #dc2626; }
         .flag-abnormal { color: #b45309; }
-        .footer { margin-top: 10px; font-size: 11px; color: #6b7280; text-align: right; }
+        .footer { display: none; }
         .notes { margin-top: 12px; font-size: 12px; display: ${minimal ? "none" : "block"}; }
       </style>
     </head>
     <body>
-      <div class="header">
-        <div class="title">${testType} Report</div>
-        <div class="meta">Test ID: ${testId} • Generated: ${generatedAt}</div>
-      </div>
+      <div class="header"></div>
       
       <div class="patient-info">
+        <div class="patient-row">
+          <span class="patient-label">Report:</span>
+          <span class="patient-value">${generatedAt} ${reportTitle} - ${testId}</span>
+        </div>
+        <div class="patient-divider"></div>
         <div class="patient-row">
           <span class="patient-label">Patient Name:</span>
           <span class="patient-value">${patient?.name || "N/A"}</span>
@@ -173,7 +175,6 @@ export function printLabReport(options: {
       </table>
 
       ${comments && !minimal ? `<div class="notes"><strong>Comments:</strong> ${comments}</div>` : ""}
-      <div class="footer">${reportTitle}</div>
     </body>
   </html>`;
 

@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Edit3, Printer } from "lucide-react";
+import { Edit3, Printer, Check, X } from "lucide-react";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
+import { useEditableRanges } from "@/hooks/use-editable-ranges";
+import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
 const sugarParameters = [
   { name: "fastingGlucose", label: "Fasting Glucose", unit: "mg/dL", normalRange: "70-100", step: "1" },
@@ -30,6 +32,22 @@ export default function SugarTest() {
     comments: "",
   });
   const [editingTestId, setEditingTestId] = useState<boolean>(false);
+
+  // Use editable ranges hook
+  const {
+    rangeOverrides,
+    setRangeOverrides,
+    flagOverrides,
+    setFlagOverrides,
+    editingRange,
+    setEditingRange,
+    editingFlag,
+    setEditingFlag,
+    getFlag,
+    getFlagColor,
+    calculateFlags,
+    getNormalRanges,
+  } = useEditableRanges(sugarParameters);
 
   const { toast } = useToast();
 
@@ -97,34 +115,9 @@ export default function SugarTest() {
       return;
     }
 
-    // Calculate flags based on results
-    const flags: Record<string, string> = {};
-    sugarParameters.forEach(param => {
-      const value = parseFloat(formData.results[param.name]);
-      if (!isNaN(value)) {
-        if (param.name === "postPrandial" || param.name === "gtt1hr" || param.name === "gtt2hr") {
-          // These have upper limits only
-          const threshold = parseFloat(param.normalRange.replace('<', ''));
-          flags[param.name] = value <= threshold ? "NORMAL" : "HIGH";
-        } else {
-          // Range-based parameters
-          const [min, max] = param.normalRange.split('-').map(parseFloat);
-          if (value < min) {
-            flags[param.name] = "LOW";
-          } else if (value > max) {
-            flags[param.name] = "HIGH";
-          } else {
-            flags[param.name] = "NORMAL";
-          }
-        }
-      }
-    });
-
-    // Prepare normal ranges
-    const normalRanges: Record<string, string> = {};
-    sugarParameters.forEach(param => {
-      normalRanges[param.name] = param.normalRange;
-    });
+    // Calculate flags based on results (using editable ranges)
+    const flags = calculateFlags(formData.results);
+    const normalRanges = getNormalRanges();
 
     try {
       await createTestMutation.mutateAsync({
@@ -182,7 +175,7 @@ export default function SugarTest() {
         parameterLabel: param.label,
         value,
         unit: param.unit,
-        normalRange: `${param.normalRange} ${param.unit}`,
+        normalRange: `${(rangeOverrides[param.name] ?? param.normalRange)} ${param.unit}`,
         flag,
       };
     });
@@ -253,28 +246,50 @@ export default function SugarTest() {
             </div>
 
             {/* Sugar Parameters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sugarParameters.map((param) => (
-                <div key={param.name}>
-                  <Label className="block text-sm font-medium text-slate-700 mb-2">
-                    {param.label}
-                  </Label>
-                  <div className="flex">
-                    <Input
-                      type="number"
-                      step={param.step}
-                      value={formData.results[param.name] || ""}
-                      onChange={(e) => handleResultChange(param.name, e.target.value)}
-                      className="flex-1 rounded-r-none"
-                      placeholder={param.normalRange}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Test Parameters</h3>
+              <div className="grid gap-4">
+                {sugarParameters.map((param) => {
+                  const currentValue = formData.results[param.name] || "";
+                  const flag = getFlag(param.name, currentValue);
+                  const flagColor = getFlagColor(flag);
+                  const currentRange = rangeOverrides[param.name] ?? param.normalRange;
+                  const isEditingRange = !!editingRange[param.name];
+                  const isEditingFlag = !!editingFlag[param.name];
+                  
+                  return (
+                    <EditableParameterRow
+                      key={param.name}
+                      param={param}
+                      currentValue={currentValue}
+                      onResultChange={handleResultChange}
+                      currentRange={currentRange}
+                      isEditingRange={isEditingRange}
+                      onRangeEdit={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: true }))}
+                      onRangeChange={(paramName, range) => setRangeOverrides(prev => ({ ...prev, [paramName]: range }))}
+                      onRangeSave={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: false }))}
+                      onRangeCancel={(paramName) => {
+                        setRangeOverrides(prev => ({ ...prev, [paramName]: param.normalRange }));
+                        setEditingRange(prev => ({ ...prev, [paramName]: false }));
+                      }}
+                      flag={flag}
+                      flagColor={flagColor}
+                      isEditingFlag={isEditingFlag}
+                      onFlagEdit={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: true }))}
+                      onFlagChange={(paramName, flagValue) => setFlagOverrides(prev => ({ ...prev, [paramName]: flagValue }))}
+                      onFlagSave={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: false }))}
+                      onFlagCancel={(paramName) => {
+                        setFlagOverrides(prev => {
+                          const clone = { ...prev };
+                          delete clone[paramName];
+                          return clone;
+                        });
+                        setEditingFlag(prev => ({ ...prev, [paramName]: false }));
+                      }}
                     />
-                    <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">
-                      {param.unit}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">Normal: {param.normalRange} {param.unit}</p>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
 
             {/* Comments */}

@@ -8,19 +8,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Edit3, Printer } from "lucide-react";
+import { Edit3, Printer, Check, X } from "lucide-react";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
+import { useEditableRanges } from "@/hooks/use-editable-ranges";
+import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
 const lftParameters = [
   { name: "alt", label: "ALT (SGPT)", unit: "U/L", normalRange: "7-56", step: "1" },
   { name: "ast", label: "AST (SGOT)", unit: "U/L", normalRange: "10-40", step: "1" },
   { name: "alp", label: "Alkaline Phosphatase", unit: "U/L", normalRange: "44-147", step: "1" },
   { name: "totalBilirubin", label: "Total Bilirubin", unit: "mg/dL", normalRange: "0.3-1.2", step: "0.1" },
-  { name: "directBilirubin", label: "Direct Bilirubin", unit: "mg/dL", normalRange: "0.0-0.3", step: "0.1" },
+  { name: "directBilirubin", label: "Direct Bilirubin", unit: "mg/dL", normalRange: "0.0-0.5", step: "0.1" },
   { name: "totalProtein", label: "Total Protein", unit: "g/dL", normalRange: "6.3-8.2", step: "0.1" },
-  { name: "albumin", label: "Albumin", unit: "g/dL", normalRange: "3.5-5.0", step: "0.1" },
+  { name: "albumin", label: "Albumin", unit: "g/dL", normalRange: "3.5-5.5", step: "0.1" },
   { name: "globulin", label: "Globulin", unit: "g/dL", normalRange: "2.3-3.4", step: "0.1" },
 ];
 
@@ -32,6 +34,22 @@ export default function LFTTest() {
     comments: "",
   });
   const [editingTestId, setEditingTestId] = useState<boolean>(false);
+
+  // Use editable ranges hook
+  const {
+    rangeOverrides,
+    setRangeOverrides,
+    flagOverrides,
+    setFlagOverrides,
+    editingRange,
+    setEditingRange,
+    editingFlag,
+    setEditingFlag,
+    getFlag,
+    getFlagColor,
+    calculateFlags,
+    getNormalRanges,
+  } = useEditableRanges(lftParameters);
 
   const { toast } = useToast();
 
@@ -99,27 +117,9 @@ export default function LFTTest() {
       return;
     }
 
-    // Calculate flags based on results
-    const flags: Record<string, string> = {};
-    lftParameters.forEach(param => {
-      const value = parseFloat(formData.results[param.name]);
-      if (!isNaN(value)) {
-        const [min, max] = param.normalRange.split('-').map(parseFloat);
-        if (value < min) {
-          flags[param.name] = "LOW";
-        } else if (value > max) {
-          flags[param.name] = "HIGH";
-        } else {
-          flags[param.name] = "NORMAL";
-        }
-      }
-    });
-
-    // Prepare normal ranges
-    const normalRanges: Record<string, string> = {};
-    lftParameters.forEach(param => {
-      normalRanges[param.name] = param.normalRange;
-    });
+    // Calculate flags and ranges using overrides
+    const flags = calculateFlags(formData.results);
+    const normalRanges = getNormalRanges();
 
     try {
       await createTestMutation.mutateAsync({
@@ -149,29 +149,7 @@ export default function LFTTest() {
     }));
   };
 
-  // Function to get flag for a parameter
-  const getFlag = (paramName: string, value: string) => {
-    const numValue = parseFloat(value);
-    if (isNaN(numValue) || !value.trim()) return "";
-    
-    const param = lftParameters.find(p => p.name === paramName);
-    if (!param) return "";
-    
-    const [min, max] = param.normalRange.split('-').map(parseFloat);
-    if (numValue < min) return "LOW";
-    if (numValue > max) return "HIGH";
-    return "NORMAL";
-  };
-
-  // Function to get flag color
-  const getFlagColor = (flag: string) => {
-    switch (flag) {
-      case "LOW": return "text-red-600 bg-red-50";
-      case "HIGH": return "text-red-600 bg-red-50";
-      case "NORMAL": return "text-green-600 bg-green-50";
-      default: return "text-slate-500 bg-slate-50";
-    }
-  };
+  // getFlag/getFlagColor come from hook
 
   const handleIdUpdate = async (newId: string) => {
     setFormData(prev => ({ ...prev, testId: newId }));
@@ -187,7 +165,7 @@ export default function LFTTest() {
         parameterLabel: param.label,
         value,
         unit: param.unit,
-        normalRange: `${param.normalRange} ${param.unit}`,
+        normalRange: `${(rangeOverrides[param.name] ?? param.normalRange)} ${param.unit}`,
         flag,
       };
     });
@@ -267,54 +245,40 @@ export default function LFTTest() {
                   const currentValue = formData.results[param.name] || "";
                   const flag = getFlag(param.name, currentValue);
                   const flagColor = getFlagColor(flag);
+                  const currentRange = rangeOverrides[param.name] ?? param.normalRange;
+                  const isEditingRange = !!editingRange[param.name];
+                  const isEditingFlag = !!editingFlag[param.name];
                   
                   return (
-                    <div key={param.name} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
-                        {/* Parameter Name */}
-                        <div className="lg:col-span-1">
-                          <Label className="text-sm font-medium text-slate-700">
-                            {param.label}
-                          </Label>
-                        </div>
-                        
-                        {/* Normal Range */}
-                        <div className="lg:col-span-1">
-                          <div className="text-sm text-slate-600">
-                            <span className="font-medium">Normal Range:</span>
-                            <div className="text-blue-600 font-semibold">
-                              {param.normalRange} {param.unit}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Result Input */}
-                        <div className="lg:col-span-1">
-                          <div className="flex">
-                            <Input
-                              type="number"
-                              step={param.step}
-                              value={currentValue}
-                              onChange={(e) => handleResultChange(param.name, e.target.value)}
-                              className="flex-1 rounded-r-none text-center font-medium"
-                              placeholder="Enter result"
-                            />
-                            <span className="px-3 py-2 bg-white border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600 font-medium">
-                              {param.unit}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Flag Status */}
-                        <div className="lg:col-span-1">
-                          {flag && (
-                            <div className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${flagColor}`}>
-                              {flag}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <EditableParameterRow
+                      key={param.name}
+                      param={param}
+                      currentValue={currentValue}
+                      onResultChange={handleResultChange}
+                      currentRange={currentRange}
+                      isEditingRange={isEditingRange}
+                      onRangeEdit={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: true }))}
+                      onRangeChange={(paramName, range) => setRangeOverrides(prev => ({ ...prev, [paramName]: range }))}
+                      onRangeSave={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: false }))}
+                      onRangeCancel={(paramName) => {
+                        setRangeOverrides(prev => ({ ...prev, [paramName]: param.normalRange }));
+                        setEditingRange(prev => ({ ...prev, [paramName]: false }));
+                      }}
+                      flag={flag}
+                      flagColor={flagColor}
+                      isEditingFlag={isEditingFlag}
+                      onFlagEdit={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: true }))}
+                      onFlagChange={(paramName, flagValue) => setFlagOverrides(prev => ({ ...prev, [paramName]: flagValue }))}
+                      onFlagSave={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: false }))}
+                      onFlagCancel={(paramName) => {
+                        setFlagOverrides(prev => {
+                          const clone = { ...prev };
+                          delete clone[paramName];
+                          return clone;
+                        });
+                        setEditingFlag(prev => ({ ...prev, [paramName]: false }));
+                      }}
+                    />
                   );
                 })}
               </div>

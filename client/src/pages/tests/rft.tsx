@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Edit3, Printer } from "lucide-react";
+import { Edit3, Printer, Check, X } from "lucide-react";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
+import { useEditableRanges } from "@/hooks/use-editable-ranges";
+import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
 const rftParameters = [
   { name: "urea", label: "Urea", unit: "mg/dL", normalRange: "7-20", step: "0.1" },
@@ -32,6 +34,22 @@ export default function RFTTest() {
     comments: "",
   });
   const [editingTestId, setEditingTestId] = useState<boolean>(false);
+
+  // Editable ranges/flags
+  const {
+    rangeOverrides,
+    setRangeOverrides,
+    flagOverrides,
+    setFlagOverrides,
+    editingRange,
+    setEditingRange,
+    editingFlag,
+    setEditingFlag,
+    getFlag,
+    getFlagColor,
+    calculateFlags,
+    getNormalRanges,
+  } = useEditableRanges(rftParameters);
 
   const { toast } = useToast();
 
@@ -99,32 +117,9 @@ export default function RFTTest() {
       return;
     }
 
-    // Calculate flags based on results
-    const flags: Record<string, string> = {};
-    rftParameters.forEach(param => {
-      const value = parseFloat(formData.results[param.name]);
-      if (!isNaN(value)) {
-        if (param.name === "egfr") {
-          // eGFR has different logic (>60 is normal)
-          flags[param.name] = value >= 60 ? "NORMAL" : "LOW";
-        } else {
-          const [min, max] = param.normalRange.split('-').map(parseFloat);
-          if (value < min) {
-            flags[param.name] = "LOW";
-          } else if (value > max) {
-            flags[param.name] = "HIGH";
-          } else {
-            flags[param.name] = "NORMAL";
-          }
-        }
-      }
-    });
-
-    // Prepare normal ranges
-    const normalRanges: Record<string, string> = {};
-    rftParameters.forEach(param => {
-      normalRanges[param.name] = param.normalRange;
-    });
+    // Flags and ranges via shared hook (respects overrides and special formats)
+    const flags = calculateFlags(formData.results);
+    const normalRanges = getNormalRanges();
 
     try {
       await createTestMutation.mutateAsync({
@@ -154,34 +149,7 @@ export default function RFTTest() {
     }));
   };
 
-  // Function to get flag for a parameter
-  const getFlag = (paramName: string, value: string) => {
-    const numValue = parseFloat(value);
-    if (isNaN(numValue) || !value.trim()) return "";
-    
-    const param = rftParameters.find(p => p.name === paramName);
-    if (!param) return "";
-    
-    if (param.name === "egfr") {
-      // eGFR has different logic (>60 is normal)
-      return numValue >= 60 ? "NORMAL" : "LOW";
-    } else {
-      const [min, max] = param.normalRange.split('-').map(parseFloat);
-      if (numValue < min) return "LOW";
-      if (numValue > max) return "HIGH";
-      return "NORMAL";
-    }
-  };
-
-  // Function to get flag color
-  const getFlagColor = (flag: string) => {
-    switch (flag) {
-      case "LOW": return "text-red-600 bg-red-50";
-      case "HIGH": return "text-red-600 bg-red-50";
-      case "NORMAL": return "text-green-600 bg-green-50";
-      default: return "text-slate-500 bg-slate-50";
-    }
-  };
+  // getFlag/getFlagColor come from hook
 
   const handleIdUpdate = async (newId: string) => {
     setFormData(prev => ({ ...prev, testId: newId }));
@@ -197,7 +165,7 @@ export default function RFTTest() {
         parameterLabel: param.label,
         value,
         unit: param.unit,
-        normalRange: `${param.normalRange} ${param.unit}`.trim(),
+        normalRange: `${(rangeOverrides[param.name] ?? param.normalRange)} ${param.unit}`.trim(),
         flag,
       };
     });
@@ -277,54 +245,40 @@ export default function RFTTest() {
                   const currentValue = formData.results[param.name] || "";
                   const flag = getFlag(param.name, currentValue);
                   const flagColor = getFlagColor(flag);
+                  const currentRange = rangeOverrides[param.name] ?? param.normalRange;
+                  const isEditingRange = !!editingRange[param.name];
+                  const isEditingFlag = !!editingFlag[param.name];
                   
                   return (
-                    <div key={param.name} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
-                        {/* Parameter Name */}
-                        <div className="lg:col-span-1">
-                          <Label className="text-sm font-medium text-slate-700">
-                            {param.label}
-                          </Label>
-                        </div>
-                        
-                        {/* Normal Range */}
-                        <div className="lg:col-span-1">
-                          <div className="text-sm text-slate-600">
-                            <span className="font-medium">Normal Range:</span>
-                            <div className="text-blue-600 font-semibold">
-                              {param.normalRange} {param.unit}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Result Input */}
-                        <div className="lg:col-span-1">
-                          <div className="flex">
-                            <Input
-                              type="number"
-                              step={param.step}
-                              value={currentValue}
-                              onChange={(e) => handleResultChange(param.name, e.target.value)}
-                              className="flex-1 rounded-r-none text-center font-medium"
-                              placeholder="Enter result"
-                            />
-                            <span className="px-3 py-2 bg-white border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600 font-medium">
-                              {param.unit}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Flag Status */}
-                        <div className="lg:col-span-1">
-                          {flag && (
-                            <div className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${flagColor}`}>
-                              {flag}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <EditableParameterRow
+                      key={param.name}
+                      param={param}
+                      currentValue={currentValue}
+                      onResultChange={handleResultChange}
+                      currentRange={currentRange}
+                      isEditingRange={isEditingRange}
+                      onRangeEdit={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: true }))}
+                      onRangeChange={(paramName, range) => setRangeOverrides(prev => ({ ...prev, [paramName]: range }))}
+                      onRangeSave={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: false }))}
+                      onRangeCancel={(paramName) => {
+                        setRangeOverrides(prev => ({ ...prev, [paramName]: param.normalRange }));
+                        setEditingRange(prev => ({ ...prev, [paramName]: false }));
+                      }}
+                      flag={flag}
+                      flagColor={flagColor}
+                      isEditingFlag={isEditingFlag}
+                      onFlagEdit={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: true }))}
+                      onFlagChange={(paramName, flagValue) => setFlagOverrides(prev => ({ ...prev, [paramName]: flagValue }))}
+                      onFlagSave={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: false }))}
+                      onFlagCancel={(paramName) => {
+                        setFlagOverrides(prev => {
+                          const clone = { ...prev };
+                          delete clone[paramName];
+                          return clone;
+                        });
+                        setEditingFlag(prev => ({ ...prev, [paramName]: false }));
+                      }}
+                    />
                   );
                 })}
               </div>

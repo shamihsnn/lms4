@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Edit3, Printer } from "lucide-react";
+import { Edit3, Printer, Check, X } from "lucide-react";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
+import { useEditableRanges } from "@/hooks/use-editable-ranges";
+import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
 const lipidParameters = [
   { name: "totalCholesterol", label: "Total Cholesterol", unit: "mg/dL", normalRange: "<200", step: "1" },
@@ -30,6 +32,22 @@ export default function LipidTest() {
     comments: "",
   });
   const [editingTestId, setEditingTestId] = useState<boolean>(false);
+
+  // Editable ranges/flags
+  const {
+    rangeOverrides,
+    setRangeOverrides,
+    flagOverrides,
+    setFlagOverrides,
+    editingRange,
+    setEditingRange,
+    editingFlag,
+    setEditingFlag,
+    getFlag,
+    getFlagColor,
+    calculateFlags,
+    getNormalRanges,
+  } = useEditableRanges(lipidParameters);
 
   const { toast } = useToast();
 
@@ -97,39 +115,9 @@ export default function LipidTest() {
       return;
     }
 
-    // Calculate flags based on results
-    const flags: Record<string, string> = {};
-    lipidParameters.forEach(param => {
-      const value = parseFloat(formData.results[param.name]);
-      if (!isNaN(value)) {
-        // Special logic for different lipid parameters
-        if (param.name === "totalCholesterol" || param.name === "ldl" || param.name === "triglycerides" || param.name === "nonHdl") {
-          // Lower is better for these parameters
-          const threshold = parseFloat(param.normalRange.replace('<', ''));
-          flags[param.name] = value <= threshold ? "NORMAL" : "HIGH";
-        } else if (param.name === "hdl") {
-          // Higher is better for HDL
-          const threshold = parseFloat(param.normalRange.replace('>', ''));
-          flags[param.name] = value >= threshold ? "NORMAL" : "LOW";
-        } else if (param.name === "vldl") {
-          // Range-based
-          const [min, max] = param.normalRange.split('-').map(parseFloat);
-          if (value < min) {
-            flags[param.name] = "LOW";
-          } else if (value > max) {
-            flags[param.name] = "HIGH";
-          } else {
-            flags[param.name] = "NORMAL";
-          }
-        }
-      }
-    });
-
-    // Prepare normal ranges
-    const normalRanges: Record<string, string> = {};
-    lipidParameters.forEach(param => {
-      normalRanges[param.name] = param.normalRange;
-    });
+    // Flags and ranges via shared hook (respects overrides and <,> cases)
+    const flags = calculateFlags(formData.results);
+    const normalRanges = getNormalRanges();
 
     try {
       await createTestMutation.mutateAsync({
@@ -168,25 +156,12 @@ export default function LipidTest() {
     const selectedPatient = patients.find(p => p.patientId === formData.patientId);
     const rows: ReportRow[] = lipidParameters.map(param => {
       const value = formData.results[param.name] || "";
-      let flag: ReportRow["flag"] = "";
-      if (value !== "") {
-        const v = parseFloat(value);
-        if (["totalCholesterol", "ldl", "triglycerides", "nonHdl"].includes(param.name)) {
-          const thr = parseFloat(param.normalRange.replace('<', ''));
-          flag = !isNaN(v) ? (v <= thr ? "NORMAL" : "HIGH") : "";
-        } else if (param.name === "hdl") {
-          const thr = parseFloat(param.normalRange.replace('>', ''));
-          flag = !isNaN(v) ? (v >= thr ? "NORMAL" : "LOW") : "";
-        } else {
-          const [min, max] = param.normalRange.split('-').map(parseFloat);
-          flag = !isNaN(v) ? (v < min ? "LOW" : v > max ? "HIGH" : "NORMAL") : "";
-        }
-      }
+      const flag = getFlag(param.name, value) as ReportRow["flag"];
       return {
         parameterLabel: param.label,
         value,
         unit: param.unit,
-        normalRange: `${param.normalRange} ${param.unit}`,
+        normalRange: `${(rangeOverrides[param.name] ?? param.normalRange)} ${param.unit}`,
         flag,
       };
     });
@@ -257,28 +232,50 @@ export default function LipidTest() {
             </div>
 
             {/* Lipid Parameters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lipidParameters.map((param) => (
-                <div key={param.name}>
-                  <Label className="block text-sm font-medium text-slate-700 mb-2">
-                    {param.label}
-                  </Label>
-                  <div className="flex">
-                    <Input
-                      type="number"
-                      step={param.step}
-                      value={formData.results[param.name] || ""}
-                      onChange={(e) => handleResultChange(param.name, e.target.value)}
-                      className="flex-1 rounded-r-none"
-                      placeholder={param.normalRange}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Test Parameters</h3>
+              <div className="grid gap-4">
+                {lipidParameters.map((param) => {
+                  const currentValue = formData.results[param.name] || "";
+                  const flag = getFlag(param.name, currentValue);
+                  const flagColor = getFlagColor(flag);
+                  const currentRange = rangeOverrides[param.name] ?? param.normalRange;
+                  const isEditingRange = !!editingRange[param.name];
+                  const isEditingFlag = !!editingFlag[param.name];
+
+                  return (
+                    <EditableParameterRow
+                      key={param.name}
+                      param={param}
+                      currentValue={currentValue}
+                      onResultChange={handleResultChange}
+                      currentRange={currentRange}
+                      isEditingRange={isEditingRange}
+                      onRangeEdit={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: true }))}
+                      onRangeChange={(paramName, range) => setRangeOverrides(prev => ({ ...prev, [paramName]: range }))}
+                      onRangeSave={(paramName) => setEditingRange(prev => ({ ...prev, [paramName]: false }))}
+                      onRangeCancel={(paramName) => {
+                        setRangeOverrides(prev => ({ ...prev, [paramName]: param.normalRange }));
+                        setEditingRange(prev => ({ ...prev, [paramName]: false }));
+                      }}
+                      flag={flag}
+                      flagColor={flagColor}
+                      isEditingFlag={isEditingFlag}
+                      onFlagEdit={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: true }))}
+                      onFlagChange={(paramName, flagValue) => setFlagOverrides(prev => ({ ...prev, [paramName]: flagValue }))}
+                      onFlagSave={(paramName) => setEditingFlag(prev => ({ ...prev, [paramName]: false }))}
+                      onFlagCancel={(paramName) => {
+                        setFlagOverrides(prev => {
+                          const clone = { ...prev };
+                          delete clone[paramName];
+                          return clone;
+                        });
+                        setEditingFlag(prev => ({ ...prev, [paramName]: false }));
+                      }}
                     />
-                    <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">
-                      {param.unit}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">Normal: {param.normalRange} {param.unit}</p>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
 
             {/* Comments */}

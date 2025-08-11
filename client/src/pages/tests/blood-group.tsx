@@ -11,10 +11,11 @@ import type { InsertTest, Patient } from "@shared/schema";
 import { Printer } from "lucide-react";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 
-const groups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
+const aboGroups = ["A", "B", "AB", "O"] as const;
+const rhOptions = ["Positive", "Negative"] as const;
 
 export default function BloodGroupTest() {
-  const [formData, setFormData] = useState({ testId: "", patientId: "", group: "" });
+  const [formData, setFormData] = useState({ testId: "", patientId: "", abo: "", rh: "" });
   const { toast } = useToast();
   const { data: nextIdData } = useQuery<{ nextId: string }>({ queryKey: ["/api/tests/next-id"] });
   const { data: patients = [] } = useQuery<Patient[]>({ queryKey: ["/api/patients"] });
@@ -29,7 +30,7 @@ export default function BloodGroupTest() {
       queryClient.invalidateQueries({ queryKey: ["/api/tests/with-patients"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tests/next-id"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      setFormData({ testId: "", patientId: "", group: "" });
+      setFormData({ testId: "", patientId: "", abo: "", rh: "" });
       toast({ title: "Blood group saved" });
     },
   });
@@ -40,8 +41,8 @@ export default function BloodGroupTest() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.testId || !formData.patientId || !formData.group) {
-      toast({ title: "Validation Error", description: "All fields are required", variant: "destructive" });
+    if (!formData.testId || !formData.patientId || !formData.abo || !formData.rh) {
+      toast({ title: "Validation Error", description: "Test ID, Patient, ABO, and Rh are required", variant: "destructive" });
       return;
     }
     const patient = patients.find((p) => p.patientId === formData.patientId);
@@ -53,9 +54,9 @@ export default function BloodGroupTest() {
       testId: formData.testId,
       patientId: patient.id,
       testType: "Blood Group",
-      testResults: { group: formData.group },
-      normalRanges: { group: "N/A" },
-      flags: { group: "" },
+      testResults: { ABO: formData.abo, RH: formData.rh },
+      normalRanges: { ABO: "N/A", RH: "N/A" },
+      flags: { ABO: "", RH: "" },
       status: "completed",
       performedBy: undefined,
       modifiedBy: undefined,
@@ -64,7 +65,10 @@ export default function BloodGroupTest() {
 
   const handlePrint = () => {
     const patient = patients.find((p) => p.patientId === formData.patientId);
-    const rows: ReportRow[] = [{ parameterLabel: "Blood Group", value: formData.group, normalRange: "", flag: "" }];
+    const rows: ReportRow[] = [
+      { parameterLabel: "ABO", value: formData.abo, normalRange: "", flag: "" },
+      { parameterLabel: "RH", value: formData.rh, normalRange: "", flag: "" },
+    ];
     printLabReport({ reportTitle: "FINAL REPORT", testId: formData.testId, testType: "Blood Group", patient, rows, minimal: true });
   };
 
@@ -102,14 +106,27 @@ export default function BloodGroupTest() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
-                <Label className="block text-sm font-medium text-slate-700 mb-2">Blood Group</Label>
-                <Select value={formData.group} onValueChange={(v) => setFormData((p) => ({ ...p, group: v }))} required>
+                <Label className="block text-sm font-medium text-slate-700 mb-2">ABO</Label>
+                <Select value={formData.abo} onValueChange={(v) => setFormData((p) => ({ ...p, abo: v }))} required>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select group" />
+                    <SelectValue placeholder="Select ABO" />
                   </SelectTrigger>
                   <SelectContent>
-                    {groups.map((g) => (
+                    {aboGroups.map((g) => (
                       <SelectItem key={g} value={g}>{g}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="block text-sm font-medium text-slate-700 mb-2">RH</Label>
+                <Select value={formData.rh} onValueChange={(v) => setFormData((p) => ({ ...p, rh: v }))} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select RH" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rhOptions.map((r) => (
+                      <SelectItem key={r} value={r}>{r}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
