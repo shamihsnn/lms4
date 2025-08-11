@@ -2,30 +2,35 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/index.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "client/dist/**",
-      "use": "@vercel/static"
+      "src": "api/[...path].js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["dist/**", "server/**", "shared/**"]
+      }
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "dist/index.js"
+      "source": "/api/(.*)",
+      "destination": "/api/[...path].js"
     },
     {
-      "src": "/(.*)",
-      "dest": "client/dist/$1"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
   "functions": {
-    "dist/index.js": {
+    "api/[...path].js": {
       "maxDuration": 30
     }
+  },
+  "env": {
+    "NODE_ENV": "production",
+    "SUPABASE_URL": "@supabase_url",
+    "SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "DATABASE_URL": "@database_url",
+    "SUPABASE_DATABASE_URL": "@supabase_database_url",
+    "SESSION_SECRET": "@session_secret",
+    "COOKIE_SECURE": "true"
   }
 }
