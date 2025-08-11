@@ -19,21 +19,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize Supabase storage
   const storage = new SupabaseStorage();
 
-  // Session configuration
-  // In local production (npm run start over http://localhost), a secure cookie will not be sent by the browser.
-  // Control this behavior via COOKIE_SECURE env. Default is false for local, true only when explicitly enabled.
-  const useSecureCookie = (process.env.COOKIE_SECURE || "false").toLowerCase() === "true";
+  // Session configuration for Vercel/Serverless environments
+  // In production, we need secure cookies, but for local development we don't
+  const isProduction = process.env.NODE_ENV === 'production';
+  const useSecureCookie = isProduction || (process.env.COOKIE_SECURE || "false").toLowerCase() === "true";
+  
   app.use(session({
     secret: process.env.SESSION_SECRET || 'lab-management-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: useSecureCookie,
-      // SameSite must be 'none' only when secure cookies are used, otherwise use 'lax' for local
+      // SameSite must be 'none' only when secure cookies are used in production
       sameSite: (useSecureCookie ? 'none' : 'lax'),
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+    },
+    // For Vercel deployment, we need to ensure sessions persist properly
+    proxy: true
   }));
 
   // Auth middleware
