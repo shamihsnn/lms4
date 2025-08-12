@@ -15,7 +15,7 @@ import type { Patient, InsertTest } from "@shared/schema";
 import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
-const sugarParameters = [
+export const sugarParameters = [
   { name: "fastingGlucose", label: "Fasting Glucose", unit: "mg/dL", normalRange: "70-100", step: "1" },
   { name: "randomGlucose", label: "Random Glucose", unit: "mg/dL", normalRange: "70-140", step: "1" },
   { name: "postPrandial", label: "Post Prandial (2hr)", unit: "mg/dL", normalRange: "<140", step: "1" },

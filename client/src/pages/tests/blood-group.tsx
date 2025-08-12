@@ -66,8 +66,8 @@ export default function BloodGroupTest() {
   const handlePrint = () => {
     const patient = patients.find((p) => p.patientId === formData.patientId);
     const rows: ReportRow[] = [
-      { parameterLabel: "ABO", value: formData.abo, normalRange: "", flag: "" },
-      { parameterLabel: "RH", value: formData.rh, normalRange: "", flag: "" },
+      { parameterLabel: "ABO", value: formData.abo, unit: "", normalRange: "", flag: "" },
+      { parameterLabel: "RH", value: formData.rh, unit: "", normalRange: "", flag: "" },
     ];
     printLabReport({ reportTitle: "FINAL REPORT", testId: formData.testId, testType: "Blood Group", patient, rows, minimal: true });
   };

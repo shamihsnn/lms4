@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const urineParameters = [
+export const urineParameters = [
   // Physical Examination
   { name: "color", label: "Color", unit: "", normalRange: "Pale Yellow", step: "", type: "text" },
   { name: "appearance", label: "Appearance", unit: "", normalRange: "Clear", step: "", type: "text" },

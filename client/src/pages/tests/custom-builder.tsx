@@ -112,7 +112,7 @@ export default function CustomBuilder() {
   const handleLoadTemplate = (testType: string) => {
     const tpl = templates.find(t => t.testType === testType);
     if (!tpl) return;
-    setFormData(p => ({ ...p, testType: tpl.testType, parameters: (tpl.parameters as any) as Param }));
+    setFormData(p => ({ ...p, testType: tpl.testType, parameters: (tpl.parameters as any as Param[]) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

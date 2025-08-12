@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const testosteroneParameters = [
+export const testosteroneParameters = [
   { name: "male", label: "Total Testosterone (Male)", unit: "ng/dL", normalRange: "300-1000", step: "1" },
   { name: "female", label: "Total Testosterone (Female)", unit: "ng/dL", normalRange: "15-70", step: "1" },
 ];

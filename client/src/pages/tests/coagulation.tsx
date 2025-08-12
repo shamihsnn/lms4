@@ -14,7 +14,7 @@ import EditIdModal from "@/components/modals/edit-id-modal";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 
 // Reference ranges (adults, typical lab ranges; may vary by method)
-const coagParams = [
+export const coagulationParameters = [
   { name: "pt", label: "Prothrombin Time (PT)", unit: "sec", normalRange: "11-13.5" },
   { name: "inr", label: "INR", unit: "", normalRange: "0.8-1.2" },
   { name: "aptt", label: "Activated Partial Thromboplastin Time (aPTT)", unit: "sec", normalRange: "28-40" },
@@ -69,7 +69,7 @@ export default function CoagulationTest() {
     }
 
     const flags: Record<string, string> = {};
-    coagParams.forEach((p) => {
+    coagulationParameters.forEach((p) => {
       const raw = formData.results[p.name];
       if (raw === undefined || raw === "") return;
       const value = parseFloat(raw);
@@ -83,7 +83,7 @@ export default function CoagulationTest() {
     });
 
     const normalRanges: Record<string, string> = {};
-    coagParams.forEach((p) => (normalRanges[p.name] = `${p.normalRange} ${p.unit}`.trim()));
+    coagulationParameters.forEach((p) => (normalRanges[p.name] = `${p.normalRange} ${p.unit}`.trim()));
 
     try {
       await createTestMutation.mutateAsync({
@@ -108,7 +108,7 @@ export default function CoagulationTest() {
 
   const handlePrint = () => {
     const patient = patients.find((p) => p.patientId === formData.patientId);
-    const rows: ReportRow[] = coagParams.map((p) => ({
+    const rows: ReportRow[] = coagulationParameters.map((p) => ({
       parameterLabel: p.label,
       value: formData.results[p.name] || "",
       unit: p.unit,
@@ -172,7 +172,7 @@ export default function CoagulationTest() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {coagParams.map((param) => (
+              {coagulationParameters.map((param) => (
                 <div key={param.name}>
                   <Label className="block text-sm font-medium text-slate-700 mb-2">{param.label}</Label>
                   <div className="flex">

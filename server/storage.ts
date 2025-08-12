@@ -1,3 +1,6 @@
+// @ts-nocheck
+// Legacy storage implementation kept for reference. The app uses
+// `server/supabase-storage.ts` for all routes.
 import { type AdminUser, type InsertAdminUser, type Patient, type InsertPatient, type Test, type InsertTest, type IdChangeLog, type InsertIdChangeLog, type TestTemplate, type InsertTestTemplate } from "@shared/schema";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";

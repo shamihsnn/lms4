@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTestPayload } from "@shared/schema";
 
-const bilirubinParams = [
+export const bilirubinParameters = [
   { name: "total", label: "Total Bilirubin", unit: "mg/dL", normalRange: "0.3-1.2", step: "0.1" },
   { name: "direct", label: "Direct Bilirubin", unit: "mg/dL", normalRange: "0.0-0.3", step: "0.1" },
   { name: "indirect", label: "Indirect Bilirubin", unit: "mg/dL", normalRange: "0.2-0.9", step: "0.1" },
@@ -46,7 +46,7 @@ export default function BilirubinTest() {
     const patient = patients.find(p => p.patientId === formData.patientId);
     if (!patient) { toast({ title: "Patient Not Found", description: "Selected patient not found", variant: "destructive" }); return; }
     const flags: Record<string, string> = {};
-    bilirubinParams.forEach(p => {
+    bilirubinParameters.forEach(p => {
       const v = parseFloat(formData.results[p.name]);
       if (!isNaN(v)) {
         const [min, max] = p.normalRange.split('-').map(parseFloat);
@@ -54,13 +54,13 @@ export default function BilirubinTest() {
       }
     });
     const normalRanges: Record<string, string> = {};
-    bilirubinParams.forEach(p => (normalRanges[p.name] = `${p.normalRange} ${p.unit}`));
+    bilirubinParameters.forEach(p => (normalRanges[p.name] = `${p.normalRange} ${p.unit}`));
     await createTestMutation.mutateAsync({ testId: formData.testId, patientId: patient.id, testType: "Bilirubin", testResults: formData.results, normalRanges, flags, status: "completed", performedBy: undefined, modifiedBy: undefined });
   };
 
   const handlePrint = () => {
     const patient = patients.find(p => p.patientId === formData.patientId);
-    const rows: ReportRow[] = bilirubinParams.map(p => {
+    const rows: ReportRow[] = bilirubinParameters.map(p => {
       const value = formData.results[p.name] || "";
       let flag: ReportRow["flag"] = "";
       if (value) {
@@ -70,7 +70,7 @@ export default function BilirubinTest() {
       }
       return { parameterLabel: p.label, value, unit: p.unit, normalRange: `${p.normalRange} ${p.unit}`, flag };
     });
-    printLabReport({ reportTitle: "FINAL REPORT", testId: formData.testId, testType: "Bilirubin", patient, rows, comments: formData.comments, minimal: true });
+    printLabReport({ reportTitle: "Bilirubin", testId: formData.testId, testType: "Bilirubin", patient, rows, comments: formData.comments, minimal: true });
   };
 
   return (
@@ -106,7 +106,7 @@ export default function BilirubinTest() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {bilirubinParams.map(param => (
+              {bilirubinParameters.map(param => (
                 <div key={param.name}>
                   <Label className="block text-sm font-medium text-slate-700 mb-2">{param.label}</Label>
                   <div className="flex">

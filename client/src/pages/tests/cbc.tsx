@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const cbcParameters = [
+export const cbcParameters = [
   // Defaults kept parseable for flags; added notes for sex/age-specific ranges
   {
     name: "wbc",
@@ -276,11 +276,12 @@ export default function CBCTest() {
     const rows: ReportRow[] = cbcParameters.map(param => {
       const value = formData.results[param.name] || "";
       const flag = getFlag(param.name, value) as ReportRow["flag"];
+      const unit = typeof param.unit === "string" ? param.unit : "";
       return {
         parameterLabel: param.label,
         value,
-        unit: param.unit,
-        normalRange: `${(rangeOverrides[param.name] ?? param.normalRange)} ${param.unit}`,
+        unit,
+        normalRange: `${(rangeOverrides[param.name] ?? param.normalRange)} ${unit}`.trim(),
         flag,
       };
     });

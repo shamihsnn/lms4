@@ -15,7 +15,7 @@ import type { Patient, InsertTest } from "@shared/schema";
 import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
-const electrolyteParameters = [
+export const electrolyteParameters = [
   { name: "sodium", label: "Sodium (Na+)", unit: "mmol/L", normalRange: "136-145", step: "1" },
   { name: "potassium", label: "Potassium (K+)", unit: "mmol/L", normalRange: "3.5-5.1", step: "0.1" },
   { name: "chloride", label: "Chloride (Cl-)", unit: "mmol/L", normalRange: "98-107", step: "1" },

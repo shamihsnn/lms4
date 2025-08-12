@@ -14,7 +14,8 @@ import EditIdModal from "@/components/modals/edit-id-modal";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 
 // CRP reference: commonly <5 mg/L (method dependent)
-const crpParam = { name: "crp", label: "C-Reactive Protein (CRP)", unit: "mg/L", normalRange: "<5" };
+const crpParameter = { name: "crp", label: "C-Reactive Protein (CRP)", unit: "mg/L", normalRange: "<5" };
+export const crpParameters = [crpParameter];
 
 export default function CRPTest() {
   const [formData, setFormData] = useState({ testId: "", patientId: "", results: {} as Record<string, string>, comments: "" });
@@ -54,13 +55,13 @@ export default function CRPTest() {
       toast({ title: "Patient Not Found", description: "Selected patient not found", variant: "destructive" });
       return;
     }
-    const value = parseFloat(formData.results[crpParam.name] || "");
+    const value = parseFloat(formData.results[crpParameter.name] || "");
     const flags: Record<string, string> = {};
     if (!isNaN(value)) {
-      const thr = parseFloat(crpParam.normalRange.replace("<", ""));
-      flags[crpParam.name] = value <= thr ? "NORMAL" : "HIGH";
+      const thr = parseFloat(crpParameter.normalRange.replace("<", ""));
+      flags[crpParameter.name] = value <= thr ? "NORMAL" : "HIGH";
     }
-    const normalRanges: Record<string, string> = { [crpParam.name]: `${crpParam.normalRange} ${crpParam.unit}` };
+    const normalRanges: Record<string, string> = { [crpParameter.name]: `${crpParameter.normalRange} ${crpParameter.unit}` };
     await createTestMutation.mutateAsync({
       testId: formData.testId,
       patientId: patient.id,
@@ -76,17 +77,17 @@ export default function CRPTest() {
 
   const handlePrint = () => {
     const patient = patients.find((p) => p.patientId === formData.patientId);
-    const value = formData.results[crpParam.name] || "";
+    const value = formData.results[crpParameter.name] || "";
     const rows: ReportRow[] = [
       {
-        parameterLabel: crpParam.label,
+        parameterLabel: crpParameter.label,
         value,
-        unit: crpParam.unit,
-        normalRange: `${crpParam.normalRange} ${crpParam.unit}`,
+        unit: crpParameter.unit,
+        normalRange: `${crpParameter.normalRange} ${crpParameter.unit}`,
         flag: (() => {
           const v = parseFloat(value);
           if (isNaN(v)) return "";
-          const thr = parseFloat(crpParam.normalRange.replace("<", ""));
+          const thr = parseFloat(crpParameter.normalRange.replace("<", ""));
           return v <= thr ? "NORMAL" : "HIGH";
         })(),
       },
@@ -134,12 +135,12 @@ export default function CRPTest() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
-                <Label className="block text-sm font-medium text-slate-700 mb-2">{crpParam.label}</Label>
+                <Label className="block text-sm font-medium text-slate-700 mb-2">{crpParameter.label}</Label>
                 <div className="flex">
-                  <Input type="number" step="0.1" value={formData.results.crp || ""} onChange={(e) => setFormData((p) => ({ ...p, results: { ...p.results, crp: e.target.value } }))} className="flex-1 rounded-r-none" placeholder={crpParam.normalRange} />
-                  <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">{crpParam.unit}</span>
+                  <Input type="number" step="0.1" value={formData.results.crp || ""} onChange={(e) => setFormData((p) => ({ ...p, results: { ...p.results, crp: e.target.value } }))} className="flex-1 rounded-r-none" placeholder={crpParameter.normalRange} />
+                  <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">{crpParameter.unit}</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Normal: {crpParam.normalRange} {crpParam.unit}</p>
+                <p className="text-xs text-slate-500 mt-1">Normal: {crpParameter.normalRange} {crpParameter.unit}</p>
               </div>
             </div>
             <div>

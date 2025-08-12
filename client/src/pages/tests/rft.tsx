@@ -15,7 +15,7 @@ import type { Patient, InsertTestPayload } from "@shared/schema";
 import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
-const rftParameters = [
+export const rftParameters = [
   { name: "urea", label: "Urea", unit: "mg/dL", normalRange: "7-20", step: "0.1" },
   { name: "creatinine", label: "Creatinine", unit: "mg/dL", normalRange: "0.7-1.3", step: "0.01" },
   { name: "uricAcid", label: "Uric Acid", unit: "mg/dL", normalRange: "3.4-7.0", step: "0.1" },

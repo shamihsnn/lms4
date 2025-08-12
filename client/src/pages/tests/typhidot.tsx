@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const params = [
+export const typhidotParameters = [
   { name: "igm", label: "Typhidot IgM", unit: "", normalRange: "Negative", type: "text" as const },
   { name: "igg", label: "Typhidot IgG", unit: "", normalRange: "Negative", type: "text" as const },
 ];
@@ -46,11 +46,11 @@ export default function TyphidotTest() {
     if (!patient) { toast({ title: "Patient Not Found", description: "Selected patient not found", variant: "destructive" }); return; }
 
     const flags: Record<string, string> = {};
-    params.forEach(p => {
+    typhidotParameters.forEach((p: (typeof typhidotParameters)[number]) => {
       const val = formData.results[p.name];
       if (val) flags[p.name] = val.toLowerCase() === p.normalRange.toLowerCase() ? "NORMAL" : "ABNORMAL";
     });
-    const normalRanges: Record<string, string> = {}; params.forEach(p => (normalRanges[p.name] = p.normalRange));
+    const normalRanges: Record<string, string> = {}; typhidotParameters.forEach((p: (typeof typhidotParameters)[number]) => (normalRanges[p.name] = p.normalRange));
 
     await createTestMutation.mutateAsync({
       testId: formData.testId,
@@ -67,7 +67,7 @@ export default function TyphidotTest() {
 
   const handlePrint = () => {
     const patient = patients.find(p => p.patientId === formData.patientId);
-    const rows: ReportRow[] = params.map(p => {
+    const rows: ReportRow[] = typhidotParameters.map((p: (typeof typhidotParameters)[number]) => {
       const value = formData.results[p.name] || "";
       let flag: ReportRow["flag"] = "";
       if (value !== "") flag = value.toLowerCase() === p.normalRange.toLowerCase() ? "NORMAL" : "ABNORMAL";
@@ -109,7 +109,7 @@ export default function TyphidotTest() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {params.map(param => (
+              {typhidotParameters.map((param: (typeof typhidotParameters)[number]) => (
                 <div key={param.name}>
                   <Label className="block text-sm font-medium text-slate-700 mb-2">{param.label}</Label>
                   <Input type="text" value={formData.results[param.name] || ""} onChange={(e) => setFormData(p => ({ ...p, results: { ...p.results, [param.name]: e.target.value } }))} placeholder={param.normalRange} />

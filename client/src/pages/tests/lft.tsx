@@ -15,7 +15,7 @@ import type { Patient, InsertTest } from "@shared/schema";
 import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
-const lftParameters = [
+export const lftParameters = [
   { name: "alt", label: "ALT (SGPT)", unit: "U/L", normalRange: "7-56", step: "1" },
   { name: "ast", label: "AST (SGOT)", unit: "U/L", normalRange: "10-40", step: "1" },
   { name: "alp", label: "Alkaline Phosphatase", unit: "U/L", normalRange: "44-147", step: "1" },
@@ -161,11 +161,12 @@ export default function LFTTest() {
     const rows: ReportRow[] = lftParameters.map(param => {
       const value = formData.results[param.name] || "";
       const flag = getFlag(param.name, value) as ReportRow["flag"];
+      const unit = typeof param.unit === "string" ? param.unit : "";
       return {
         parameterLabel: param.label,
         value,
-        unit: param.unit,
-        normalRange: `${(rangeOverrides[param.name] ?? param.normalRange)} ${param.unit}`,
+        unit,
+        normalRange: `${(rangeOverrides[param.name] ?? param.normalRange)} ${unit}`.trim(),
         flag,
       };
     });

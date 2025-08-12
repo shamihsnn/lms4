@@ -15,7 +15,7 @@ import type { Patient, InsertTestPayload } from "@shared/schema";
 import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
-const lipidParameters = [
+export const lipidParameters = [
   { name: "totalCholesterol", label: "Total Cholesterol", unit: "mg/dL", normalRange: "<200", step: "1" },
   { name: "ldl", label: "LDL Cholesterol", unit: "mg/dL", normalRange: "<100", step: "1" },
   { name: "hdl", label: "HDL Cholesterol", unit: "mg/dL", normalRange: ">40", step: "1" },

@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const params = [
+export const raFactorParameters = [
   { name: "raFactor", label: "Rheumatoid Factor", unit: "IU/mL", normalRange: "<14", step: "0.1" },
 ];
 
@@ -48,10 +48,10 @@ export default function RAFactorTest() {
     const raw = formData.results.raFactor;
     const v = parseFloat(raw);
     if (!isNaN(v)) {
-      const thr = parseFloat(params[0].normalRange.replace('<', ''));
+      const thr = parseFloat(raFactorParameters[0].normalRange.replace('<', ''));
       flags.raFactor = v <= thr ? "NORMAL" : "HIGH";
     }
-    const normalRanges: Record<string, string> = { raFactor: `${params[0].normalRange} ${params[0].unit}` };
+    const normalRanges: Record<string, string> = { raFactor: `${raFactorParameters[0].normalRange} ${raFactorParameters[0].unit}` };
 
     await createTestMutation.mutateAsync({
       testId: formData.testId,
@@ -70,9 +70,9 @@ export default function RAFactorTest() {
     const patient = patients.find(p => p.patientId === formData.patientId);
     const value = formData.results.raFactor || "";
     const v = parseFloat(value);
-    const thr = parseFloat(params[0].normalRange.replace('<', ''));
+    const thr = parseFloat(raFactorParameters[0].normalRange.replace('<', ''));
     const flag: ReportRow["flag"] = isNaN(v) ? "" : v <= thr ? "NORMAL" : "HIGH";
-    const rows: ReportRow[] = [{ parameterLabel: params[0].label, value, unit: params[0].unit, normalRange: `${params[0].normalRange} ${params[0].unit}` , flag }];
+    const rows: ReportRow[] = [{ parameterLabel: raFactorParameters[0].label, value, unit: raFactorParameters[0].unit, normalRange: `${raFactorParameters[0].normalRange} ${raFactorParameters[0].unit}` , flag }];
     printLabReport({ reportTitle: "FINAL REPORT", testId: formData.testId, testType: "Rheumatoid Factor", patient, rows, comments: formData.comments, minimal: true });
   };
 
@@ -110,12 +110,12 @@ export default function RAFactorTest() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
-                <Label className="block text-sm font-medium text-slate-700 mb-2">{params[0].label}</Label>
+                <Label className="block text-sm font-medium text-slate-700 mb-2">{raFactorParameters[0].label}</Label>
                 <div className="flex">
-                  <Input type="number" step={params[0].step} value={formData.results.raFactor || ""} onChange={(e) => setFormData(p => ({ ...p, results: { ...p.results, raFactor: e.target.value } }))} className="flex-1 rounded-r-none" placeholder={params[0].normalRange} />
-                  <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">{params[0].unit}</span>
+                  <Input type="number" step={raFactorParameters[0].step} value={formData.results.raFactor || ""} onChange={(e) => setFormData(p => ({ ...p, results: { ...p.results, raFactor: e.target.value } }))} className="flex-1 rounded-r-none" placeholder={raFactorParameters[0].normalRange} />
+                  <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">{raFactorParameters[0].unit}</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Normal: {params[0].normalRange} {params[0].unit}</p>
+                <p className="text-xs text-slate-500 mt-1">Normal: {raFactorParameters[0].normalRange} {raFactorParameters[0].unit}</p>
               </div>
             </div>
 

@@ -15,7 +15,7 @@ import type { Patient, InsertTest } from "@shared/schema";
 import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
-const thyroidParameters = [
+export const thyroidParameters = [
   { name: "tsh", label: "TSH", unit: "mIU/L", normalRange: "0.27-4.20", step: "0.01" },
   { name: "t3", label: "T3 (Triiodothyronine)", unit: "ng/dL", normalRange: "80-200", step: "1" },
   { name: "t4", label: "T4 (Thyroxine)", unit: "μg/dL", normalRange: "5.1-14.1", step: "0.1" },

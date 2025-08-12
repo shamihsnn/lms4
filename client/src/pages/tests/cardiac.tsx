@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const cardiacParameters = [
+export const cardiacParameters = [
   { name: "troponinI", label: "Troponin I", unit: "ng/mL", normalRange: "<0.04", step: "0.001" },
   { name: "troponinT", label: "Troponin T", unit: "ng/mL", normalRange: "<0.01", step: "0.001" },
   { name: "ckMb", label: "CK-MB", unit: "ng/mL", normalRange: "<6.3", step: "0.1" },

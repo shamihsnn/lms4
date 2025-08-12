@@ -22,6 +22,56 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { Test, Patient } from "@shared/schema";
 import TestReportModal from "../components/modals/test-report-modal";
+import { cbcParameters } from "./tests/cbc";
+import { lftParameters } from "./tests/lft";
+import { rftParameters } from "./tests/rft";
+import { lipidParameters } from "./tests/lipid";
+import { thyroidParameters } from "./tests/thyroid";
+import { testosteroneParameters } from "./tests/testosterone";
+import { sugarParameters } from "./tests/sugar";
+import { prolactinParameters } from "./tests/prolactin";
+import { lhParameters } from "./tests/lh";
+import { electrolyteParameters } from "./tests/electrolytes";
+import { creatinineParameters } from "./tests/creatinine";
+import { bilirubinParameters } from "./tests/bilirubin";
+import { cardiacParameters } from "./tests/cardiac";
+import { coagulationParameters } from "./tests/coagulation";
+import { crpParameters } from "./tests/crp";
+import { semenParameters } from "./tests/semen-analysis";
+import { urineParameters } from "./tests/urine";
+import { raFactorParameters } from "./tests/ra-factor";
+import { vdrlParameters } from "./tests/vdrl";
+import { typhidotParameters } from "./tests/typhidot";
+
+// Define a shared shape for test parameters
+interface TestParameter {
+  name: string;
+  label: string;
+  unit?: string;
+}
+
+const testParameterMap: Record<string, readonly TestParameter[]> = {
+  CBC: cbcParameters,
+  LFT: lftParameters,
+  RFT: rftParameters,
+  "Lipid Profile": lipidParameters,
+  "Thyroid Function": thyroidParameters,
+  "Testosterone": testosteroneParameters,
+  "Blood Sugar": sugarParameters,
+  "Prolactin": prolactinParameters,
+  "LH": lhParameters,
+  "Electrolytes": electrolyteParameters,
+  "Creatinine": creatinineParameters,
+  "Bilirubin": bilirubinParameters,
+  "Cardiac Markers": cardiacParameters,
+  "Coagulation Profile": coagulationParameters,
+  "C-Reactive Protein": crpParameters,
+  "Semen Analysis": semenParameters,
+  "Urine Analysis": urineParameters,
+  "Rheumatoid Factor": raFactorParameters,
+  "VDRL": vdrlParameters,
+  "Typhidot": typhidotParameters,
+};
 
 interface TestWithPatient extends Test {
   patient?: Patient;
@@ -385,6 +435,7 @@ export default function Reports() {
           isOpen={showTestReport}
           onClose={handleCloseTestReport}
           test={selectedTest}
+          parameters={testParameterMap[selectedTest.testType] || []}
         />
       )}
     </div>

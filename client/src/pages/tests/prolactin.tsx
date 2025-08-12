@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const prolactinParameters = [
+export const prolactinParameters = [
   { name: "male", label: "Prolactin (Male)", unit: "ng/mL", normalRange: "2-18", step: "0.1" },
   { name: "femaleNonPreg", label: "Prolactin (Female - Non-pregnant)", unit: "ng/mL", normalRange: "2-29", step: "0.1" },
   { name: "femalePreg", label: "Prolactin (Female - Pregnant)", unit: "ng/mL", normalRange: "10-209", step: "0.1" },

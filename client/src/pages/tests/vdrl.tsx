@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const params = [
+export const vdrlParameters = [
   { name: "qualitative", label: "VDRL (Qualitative)", unit: "", normalRange: "Non-reactive", type: "text" as const },
   { name: "titer", label: "VDRL Titer (if reactive)", unit: "", normalRange: "N/A", type: "text" as const },
 ];
@@ -65,7 +65,7 @@ export default function VDRLTest() {
 
   const handlePrint = () => {
     const patient = patients.find(p => p.patientId === formData.patientId);
-    const rows: ReportRow[] = params.map(p => {
+    const rows: ReportRow[] = vdrlParameters.map((p: (typeof vdrlParameters)[number]) => {
       const value = formData.results[p.name] || "";
       let flag: ReportRow["flag"] = "";
       if (p.name === "qualitative" && value) flag = value.toLowerCase() === "non-reactive" ? "NORMAL" : "ABNORMAL";
@@ -108,12 +108,12 @@ export default function VDRLTest() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
-                <Label className="block text-sm font-medium text-slate-700 mb-2">{params[0].label}</Label>
-                <Input type="text" value={formData.results.qualitative || ""} onChange={(e) => setFormData(p => ({ ...p, results: { ...p.results, qualitative: e.target.value } }))} placeholder={params[0].normalRange} />
-                <p className="text-xs text-slate-500 mt-1">Normal: {params[0].normalRange}</p>
+                <Label className="block text-sm font-medium text-slate-700 mb-2">{vdrlParameters[0].label}</Label>
+                <Input type="text" value={formData.results.qualitative || ""} onChange={(e) => setFormData(p => ({ ...p, results: { ...p.results, qualitative: e.target.value } }))} placeholder={vdrlParameters[0].normalRange} />
+                <p className="text-xs text-slate-500 mt-1">Normal: {vdrlParameters[0].normalRange}</p>
               </div>
               <div>
-                <Label className="block text-sm font-medium text-slate-700 mb-2">{params[1].label}</Label>
+                <Label className="block text-sm font-medium text-slate-700 mb-2">{vdrlParameters[1].label}</Label>
                 <Input type="text" value={formData.results.titer || ""} onChange={(e) => setFormData(p => ({ ...p, results: { ...p.results, titer: e.target.value } }))} placeholder="e.g., 1:16" />
                 <p className="text-xs text-slate-500 mt-1">Reported only if reactive</p>
               </div>

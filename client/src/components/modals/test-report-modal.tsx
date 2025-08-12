@@ -12,13 +12,20 @@ interface TestWithPatient extends Test {
   patient?: Patient;
 }
 
+interface TestParameter {
+  name: string;
+  label: string;
+  unit?: string;
+}
+
 interface TestReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   test: TestWithPatient | null;
+  parameters: readonly TestParameter[];
 }
 
-export default function TestReportModal({ isOpen, onClose, test }: TestReportModalProps) {
+export default function TestReportModal({ isOpen, onClose, test, parameters = [] }: TestReportModalProps) {
   const [isPrinting, setIsPrinting] = useState(false);
 
   const handlePrint = () => {
@@ -29,9 +36,11 @@ export default function TestReportModal({ isOpen, onClose, test }: TestReportMod
         ([param, value]) => {
           const normalRange = (test.normalRanges as Record<string, any>)?.[param];
           const flag = (test.flags as Record<string, any>)?.[param] as ReportRow["flag"] | undefined;
+          const parameter = parameters.find(p => p.name === param);
           return {
-            parameterLabel: param.replace(/([A-Z])/g, " $1").trim(),
+            parameterLabel: parameter?.label || param.replace(/([A-Z])/g, " $1").trim(),
             value: value as string | number,
+            unit: parameter?.unit,
             normalRange: normalRange as string | undefined,
             flag: flag || "",
           };

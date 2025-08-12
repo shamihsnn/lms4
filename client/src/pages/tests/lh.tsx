@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const lhParameters = [
+export const lhParameters = [
   { name: "male", label: "LH (Male)", unit: "IU/L", normalRange: "1.7-8.6", step: "0.1" },
   { name: "femaleFollicular", label: "LH (Female - Follicular)", unit: "IU/L", normalRange: "2.4-12.6", step: "0.1" },
   { name: "femaleOvulatory", label: "LH (Female - Ovulatory Peak)", unit: "IU/L", normalRange: "14.0-95.6", step: "0.1" },

@@ -16,6 +16,7 @@ import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
 const param = { name: "creatinine", label: "Serum Creatinine", unit: "mg/dL", normalRange: "0.7-1.3", step: "0.01" } as const;
+export const creatinineParameters = [param];
 
 export default function CreatinineTest() {
   const [formData, setFormData] = useState({ testId: "", patientId: "", value: "", comments: "" });

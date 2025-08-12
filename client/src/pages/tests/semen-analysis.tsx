@@ -13,7 +13,7 @@ import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 
-const semenParams = [
+export const semenParameters = [
   { name: "volume", label: "Volume", unit: "mL", normalRange: ">=1.5", step: "0.1", kind: "min" as const },
   { name: "concentration", label: "Sperm Concentration", unit: "million/mL", normalRange: ">=15", step: "1", kind: "min" as const },
   { name: "totalCount", label: "Total Sperm Count", unit: "million/ejaculate", normalRange: ">=39", step: "1", kind: "min" as const },
@@ -54,7 +54,7 @@ export default function SemenAnalysisTest() {
     if (!patient) { toast({ title: "Patient Not Found", description: "Selected patient not found", variant: "destructive" }); return; }
 
     const flags: Record<string, string> = {};
-    semenParams.forEach(p => {
+    semenParameters.forEach(p => {
       const val = formData.results[p.name];
       if (!val) return;
       if (p.kind === "text") {
@@ -71,7 +71,7 @@ export default function SemenAnalysisTest() {
       }
     });
     const normalRanges: Record<string, string> = {};
-    semenParams.forEach(p => (normalRanges[p.name] = `${p.normalRange}${p.unit ? ` ${p.unit}` : ""}`));
+    semenParameters.forEach(p => (normalRanges[p.name] = `${p.normalRange}${p.unit ? ` ${p.unit}` : ""}`));
 
     await createTestMutation.mutateAsync({
       testId: formData.testId,
@@ -88,7 +88,7 @@ export default function SemenAnalysisTest() {
 
   const handlePrint = () => {
     const patient = patients.find(p => p.patientId === formData.patientId);
-    const rows: ReportRow[] = semenParams.map(p => {
+    const rows: ReportRow[] = semenParameters.map((p: (typeof semenParameters)[number]) => {
       const value = formData.results[p.name] || "";
       let flag: ReportRow["flag"] = "";
       if (value) {
@@ -140,7 +140,7 @@ export default function SemenAnalysisTest() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {semenParams.map(param => (
+              {semenParameters.map((param: (typeof semenParameters)[number]) => (
                 <div key={param.name}>
                   <Label className="block text-sm font-medium text-slate-700 mb-2">{param.label}</Label>
                   {param.kind === "text" ? (

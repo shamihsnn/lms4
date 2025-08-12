@@ -126,7 +126,11 @@ export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type Patient = typeof patients.$inferSelect;
 
-export type InsertTest = z.infer<typeof insertTestSchema>;
+// IMPORTANT: Many client pages still import InsertTest for request payloads.
+// To maintain compatibility after the SQLite migration (where payloads are
+// plain JSON objects), alias InsertTest to the payload schema so existing
+// imports continue to type-check without changing each page.
+export type InsertTest = z.infer<typeof insertTestPayloadSchema>;
 export type Test = typeof tests.$inferSelect;
 
 export type InsertIdChangeLog = z.infer<typeof insertIdChangeLogSchema>;

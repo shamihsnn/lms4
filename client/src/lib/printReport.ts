@@ -33,6 +33,7 @@ export function printLabReport(options: {
 
   const now = new Date();
   const generatedAt = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+  const displayTitle = (reportTitle && reportTitle.toUpperCase() !== "FINAL REPORT") ? reportTitle : testType;
 
   const getFlagClass = (flag?: string) => {
     switch (flag) {
@@ -53,11 +54,12 @@ export function printLabReport(options: {
     .map((r) => {
       const valueDisplay = r.value === undefined || r.value === null || r.value === ""
         ? ""
-        : `${r.value}${r.unit ? ` ${r.unit}` : ""}`;
+        : `${r.value}`;
       return `
         <tr>
           <td>${r.parameterLabel}</td>
           <td class="value ${getFlagClass(r.flag)}">${valueDisplay}</td>
+          <td>${r.unit || ""}</td>
           <td>${r.normalRange || ""}</td>
           <td class="flag ${getFlagClass(r.flag)}">${r.flag || ""}</td>
         </tr>
@@ -70,88 +72,56 @@ export function printLabReport(options: {
   <html>
     <head>
       <meta charset="utf-8" />
-      <title>${reportTitle} - ${testId}</title>
+      <title>${displayTitle} - ${testId}</title>
       <style>
         @page { size: A4; margin: 45mm 16mm 16mm 16mm; }
-        body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 13px; margin-top: 60px; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 14px; margin-top: 48px; }
         .header { display: none; }
         .title { display: none; }
         .meta { display: none; }
-        
-        .patient-info {
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          padding: 12px 16px;
-          margin: 10px 0 14px;
-          border-radius: 4px;
-        }
-        .patient-row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 4px;
-          font-size: 12.5px;
-        }
-        .patient-row:last-child {
-          margin-bottom: 0;
-        }
-        .patient-label {
-          font-weight: 600;
-          color: #374151;
-          min-width: 100px;
-        }
-        .patient-value {
-          color: #111827;
-          font-weight: 500;
-        }
-        .patient-divider {
-          border-bottom: 1px dotted #cbd5e1;
-          margin: 8px 0;
-        }
-        
-        .divider { height: 1px; background: #e5e7eb; margin: 10px 0 14px; }
-        .final-banner { display: none; }
-        .brand { display: ${minimal ? "none" : "flex"}; }
-        .info { display: ${minimal ? "none" : "grid"}; }
-        .section-title { display: ${minimal ? "none" : "block"}; }
+
+        /* Professional header */
+        .report-header { display: flex; justify-content: space-between; align-items: end; margin-bottom: 10px; }
+        .report-title { font-size: 20px; font-weight: 700; letter-spacing: 0.2px; }
+        .report-submeta { font-size: 12px; color: #4b5563; text-align: right; }
+
+        /* Patient information grid */
+        .patient-info { margin: 6px 0 12px; }
+        .patient-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
+        .patient-item { display: flex; gap: 8px; font-size: 13px; }
+        .patient-label { font-weight: 600; color: #374151; min-width: 110px; }
+        .patient-value { color: #111827; font-weight: 500; }
+
+        .divider { height: 1px; background: #e5e7eb; margin: 8px 0 12px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; font-size: 13px; }
-        thead th { background: #f9fafb; text-align: left; font-weight: 700; font-size: 13.5px; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; font-size: 14px; }
+        thead th { background: #f9fafb; text-align: left; font-weight: 700; font-size: 14.5px; }
         .value { font-weight: 600; }
         .flag-normal { color: #16a34a; }
         .flag-high { color: #dc2626; }
         .flag-abnormal { color: #b45309; }
         .footer { display: none; }
-        .notes { margin-top: 12px; font-size: 12px; display: ${minimal ? "none" : "block"}; }
+        .notes { margin-top: 12px; font-size: 13px; display: ${minimal ? "none" : "block"}; }
       </style>
     </head>
     <body>
       <div class="header"></div>
-      
+      <div class="report-header">
+        <div class="report-title">${displayTitle}</div>
+        <div class="report-submeta">
+          <div>Test ID: ${testId}</div>
+          <div>Generated: ${generatedAt}</div>
+        </div>
+      </div>
+
       <div class="patient-info">
-        <div class="patient-row">
-          <span class="patient-label">Patient Name:</span>
-          <span class="patient-value">${patient?.name || "N/A"}</span>
+        <div class="patient-grid">
+          <div class="patient-item"><span class="patient-label">Patient Name:</span><span class="patient-value">${patient?.name || "N/A"}</span></div>
+          <div class="patient-item"><span class="patient-label">Patient ID:</span><span class="patient-value">${patient?.patientId || "N/A"}</span></div>
+          <div class="patient-item"><span class="patient-label">Age:</span><span class="patient-value">${(patient?.age as unknown as string) ?? "N/A"} Years</span></div>
+          <div class="patient-item"><span class="patient-label">Sex:</span><span class="patient-value">${patient?.gender || "N/A"}</span></div>
+          ${referredBy ? `<div class="patient-item"><span class="patient-label">Ref. By:</span><span class="patient-value">${referredBy}</span></div>` : ''}
         </div>
-        <div class="patient-row">
-          <span class="patient-label">Patient ID:</span>
-          <span class="patient-value">${patient?.patientId || "N/A"}</span>
-        </div>
-        <div class="patient-divider"></div>
-        <div class="patient-row">
-          <span class="patient-label">Age:</span>
-          <span class="patient-value">${(patient?.age as unknown as string) ?? "N/A"} Years</span>
-        </div>
-        <div class="patient-row">
-          <span class="patient-label">Sex:</span>
-          <span class="patient-value">${patient?.gender || "N/A"}</span>
-        </div>
-        ${referredBy ? `
-        <div class="patient-divider"></div>
-        <div class="patient-row">
-          <span class="patient-label">Ref. By:</span>
-          <span class="patient-value">${referredBy}</span>
-        </div>
-        ` : ''}
       </div>
       
       <div class="divider"></div>
@@ -160,6 +130,7 @@ export function printLabReport(options: {
           <tr>
             <th>Tests</th>
             <th>Value</th>
+            <th>Unit</th>
             <th>Normal Value</th>
             <th>Flag</th>
           </tr>
