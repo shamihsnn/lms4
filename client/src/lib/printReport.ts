@@ -74,8 +74,8 @@ export function printLabReport(options: {
       <meta charset="utf-8" />
       <title>${displayTitle} - ${testId}</title>
       <style>
-        @page { size: A4; margin: 45mm 16mm 16mm 16mm; }
-        body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 14px; margin-top: 48px; }
+        @page { size: A4; margin: 0; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 14px; margin: 45mm 16mm 16mm 16mm; }
         .header { display: none; }
         .title { display: none; }
         .meta { display: none; }
