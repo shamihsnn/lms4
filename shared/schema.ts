@@ -1,69 +1,72 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, jsonb, serial, date, time } from "drizzle-orm/pg-core";
+import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// NOTE: SQLite schema. Use text/integer types and store JSON as text with runtime parsing.
+
 // Admin Users Table
-export const adminUsers = pgTable("admin_users", {
-  id: serial("id").primaryKey(),
-  username: varchar("username", { length: 50 }).notNull().unique(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  lastLogin: timestamp("last_login"),
-  passwordChangedAt: timestamp("password_changed_at").defaultNow(),
+export const adminUsers = sqliteTable("admin_users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  lastLogin: text("last_login"),
+  passwordChangedAt: text("password_changed_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Patients Table
-export const patients = pgTable("patients", {
-  id: serial("id").primaryKey(),
-  patientId: varchar("patient_id", { length: 20 }).notNull().unique(),
-  name: varchar("name", { length: 100 }).notNull(),
+export const patients = sqliteTable("patients", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  patientId: text("patient_id").notNull().unique(),
+  name: text("name").notNull(),
   age: integer("age"),
-  gender: varchar("gender", { length: 10 }),
-  phone: varchar("phone", { length: 15 }),
+  gender: text("gender"),
+  phone: text("phone"),
   address: text("address"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   createdBy: integer("created_by").references(() => adminUsers.id),
-  lastModified: timestamp("last_modified").defaultNow(),
+  lastModified: text("last_modified").default(sql`CURRENT_TIMESTAMP`),
   modifiedBy: integer("modified_by").references(() => adminUsers.id),
 });
 
 // Tests Table
-export const tests = pgTable("tests", {
-  id: serial("id").primaryKey(),
-  testId: varchar("test_id", { length: 20 }).notNull().unique(),
+export const tests = sqliteTable("tests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  testId: text("test_id").notNull().unique(),
   patientId: integer("patient_id").references(() => patients.id),
-  testType: varchar("test_type", { length: 50 }).notNull(),
-  testResults: jsonb("test_results").notNull(),
-  normalRanges: jsonb("normal_ranges").notNull(),
-  flags: jsonb("flags"), // HIGH/LOW/NORMAL/CRITICAL flags
-  testDate: date("test_date").defaultNow(),
-  testTime: time("test_time").defaultNow(),
-  status: varchar("status", { length: 20 }).default("completed"),
+  testType: text("test_type").notNull(),
+  // Store JSON as TEXT, typed as any for TS
+  testResults: text("test_results").$type<any>().notNull(),
+  normalRanges: text("normal_ranges").$type<any>().notNull(),
+  flags: text("flags").$type<any>(), // HIGH/LOW/NORMAL/CRITICAL flags
+  testDate: text("test_date").default(sql`DATE('now')`),
+  testTime: text("test_time").default(sql`TIME('now')`),
+  status: text("status").default("completed"),
   performedBy: integer("performed_by").references(() => adminUsers.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  lastModified: timestamp("last_modified").defaultNow(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  lastModified: text("last_modified").default(sql`CURRENT_TIMESTAMP`),
   modifiedBy: integer("modified_by").references(() => adminUsers.id),
 });
 
 // ID Change Audit Log Table
-export const idChangeLog = pgTable("id_change_log", {
-  id: serial("id").primaryKey(),
-  tableName: varchar("table_name", { length: 20 }).notNull(),
+export const idChangeLog = sqliteTable("id_change_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  tableName: text("table_name").notNull(),
   recordId: integer("record_id").notNull(),
-  oldId: varchar("old_id", { length: 20 }).notNull(),
-  newId: varchar("new_id", { length: 20 }).notNull(),
+  oldId: text("old_id").notNull(),
+  newId: text("new_id").notNull(),
   changedBy: integer("changed_by").references(() => adminUsers.id),
-  changedAt: timestamp("changed_at").defaultNow(),
+  changedAt: text("changed_at").default(sql`CURRENT_TIMESTAMP`),
   reason: text("reason"),
 });
 
 // Test Templates Table
-export const testTemplates = pgTable("test_templates", {
-  id: serial("id").primaryKey(),
-  testType: varchar("test_type", { length: 50 }).notNull(),
-  parameters: jsonb("parameters").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+export const testTemplates = sqliteTable("test_templates", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  testType: text("test_type").notNull(),
+  parameters: text("parameters").$type<any>().notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Insert schemas
@@ -96,6 +99,26 @@ export const insertTestTemplateSchema = createInsertSchema(testTemplates).omit({
   createdAt: true,
 });
 
+// API payload schemas (DB stores JSON as TEXT in SQLite)
+export const insertTestPayloadSchema = z.object({
+  testId: z.string(),
+  patientId: z.number().nullable().optional(),
+  testType: z.string(),
+  testResults: z.record(z.any()),
+  normalRanges: z.record(z.any()),
+  flags: z.record(z.any()).nullable().optional(),
+  status: z.string().optional(),
+  testDate: z.string().nullable().optional(),
+  testTime: z.string().nullable().optional(),
+  performedBy: z.number().nullable().optional(),
+  modifiedBy: z.number().nullable().optional(),
+});
+
+export const insertTestTemplatePayloadSchema = z.object({
+  testType: z.string(),
+  parameters: z.record(z.any()),
+});
+
 // Types
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type AdminUser = typeof adminUsers.$inferSelect;
@@ -111,6 +134,9 @@ export type IdChangeLog = typeof idChangeLog.$inferSelect;
 
 export type InsertTestTemplate = z.infer<typeof insertTestTemplateSchema>;
 export type TestTemplate = typeof testTemplates.$inferSelect;
+
+export type InsertTestPayload = z.infer<typeof insertTestPayloadSchema>;
+export type InsertTestTemplatePayload = z.infer<typeof insertTestTemplatePayloadSchema>;
 
 // Login schema
 export const loginSchema = z.object({

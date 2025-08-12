@@ -2,35 +2,31 @@ import dotenv from "dotenv";
 // Load environment variables first
 dotenv.config();
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
 import * as schema from "@shared/schema";
+import path from "path";
+import fs from "fs";
 
-// Environment variables for Supabase connection
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-const databaseUrl = process.env.DATABASE_URL || process.env.SUPABASE_DATABASE_URL;
+// Local SQLite file path
+const dbFile = path.resolve(process.cwd(), "data", "labdesk.db");
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL or SUPABASE_DATABASE_URL environment variable is required");
+// Ensure data directory exists
+const dataDir = path.dirname(dbFile);
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
-console.log("Attempting to connect to database:", databaseUrl.replace(/:[^:]*@/, ':****@'));
+console.log("Using local SQLite database:", dbFile);
 
-// Create postgres connection with improved settings
-const client = postgres(databaseUrl, {
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 60,
-  ssl: { rejectUnauthorized: false },
-  transform: {
-    undefined: null,
-  },
-  onnotice: () => {}, // Suppress notices
-});
+// Initialize SQLite connection
+const sqlite = new Database(dbFile);
+// Improve concurrency for desktop usage
+sqlite.pragma("journal_mode = WAL");
+sqlite.pragma("synchronous = NORMAL");
 
 // Create drizzle instance
-export const db = drizzle(client, { schema });
+export const db = drizzle(sqlite, { schema });
 
 // Export types
 export type Database = typeof db;

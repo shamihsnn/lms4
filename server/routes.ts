@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { SupabaseStorage } from "./supabase-storage";
 import bcrypt from "bcryptjs";
 import session from "express-session";
-import { loginSchema, changePasswordSchema, insertPatientSchema, insertTestSchema, insertTestTemplateSchema } from "@shared/schema";
+import { loginSchema, changePasswordSchema, insertPatientSchema, insertTestPayloadSchema, insertTestTemplatePayloadSchema } from "@shared/schema";
 
 declare module 'express-session' {
   interface SessionData {
@@ -323,18 +323,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tests", requireAuth, async (req, res) => {
     try {
-      const testData = insertTestSchema.parse(req.body);
+      const payload = insertTestPayloadSchema.parse(req.body);
       
       // Check if test ID already exists
-      const existingTest = await storage.getTestByTestId(testData.testId);
+      const existingTest = await storage.getTestByTestId(payload.testId);
       if (existingTest) {
         return res.status(400).json({ message: "Test ID already exists" });
       }
       
-      testData.performedBy = req.session.adminId;
-      testData.modifiedBy = req.session.adminId;
-      
-      const test = await storage.createTest(testData);
+      const toInsert = {
+        testId: payload.testId,
+        patientId: payload.patientId ?? null,
+        testType: payload.testType,
+        testResults: JSON.stringify(payload.testResults ?? {}),
+        normalRanges: JSON.stringify(payload.normalRanges ?? {}),
+        flags: payload.flags != null ? JSON.stringify(payload.flags) : null,
+        status: payload.status ?? "completed",
+        testDate: payload.testDate ?? null,
+        testTime: payload.testTime ?? null,
+        performedBy: req.session.adminId ?? null,
+        modifiedBy: req.session.adminId ?? null,
+      } as const;
+
+      const test = await storage.createTest(toInsert as any);
       res.json(test);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -364,8 +375,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/test-templates", requireAuth, async (req, res) => {
     try {
-      const templateData = insertTestTemplateSchema.parse(req.body);
-      const saved = await storage.upsertTestTemplate(templateData);
+      const payload = insertTestTemplatePayloadSchema.parse(req.body);
+      const saved = await storage.upsertTestTemplate({
+        testType: payload.testType,
+        parameters: JSON.stringify(payload.parameters ?? {}),
+      } as any);
       res.json(saved);
     } catch (error: any) {
       res.status(400).json({ message: error.message });

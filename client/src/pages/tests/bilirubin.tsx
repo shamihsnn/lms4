@@ -11,7 +11,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Edit3, Printer } from "lucide-react";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
-import type { Patient, InsertTest } from "@shared/schema";
+import type { Patient, InsertTestPayload } from "@shared/schema";
 
 const bilirubinParams = [
   { name: "total", label: "Total Bilirubin", unit: "mg/dL", normalRange: "0.3-1.2", step: "0.1" },
@@ -27,7 +27,7 @@ export default function BilirubinTest() {
   const { data: patients = [] } = useQuery<Patient[]>({ queryKey: ["/api/patients"] });
 
   const createTestMutation = useMutation({
-    mutationFn: async (data: InsertTest) => { const res = await apiRequest("POST", "/api/tests", data); return res.json(); },
+    mutationFn: async (data: InsertTestPayload) => { const res = await apiRequest("POST", "/api/tests", data); return res.json(); },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tests/with-patients"] });

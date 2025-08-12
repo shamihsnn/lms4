@@ -11,7 +11,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Edit3, Printer, Check, X } from "lucide-react";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
-import type { Patient, InsertTest } from "@shared/schema";
+import type { Patient, InsertTestPayload } from "@shared/schema";
 import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
 
@@ -65,7 +65,7 @@ export default function RFTTest() {
 
   // Create test mutation
   const createTestMutation = useMutation({
-    mutationFn: async (data: InsertTest) => {
+    mutationFn: async (data: InsertTestPayload) => {
       const response = await apiRequest("POST", "/api/tests", data);
       return response.json();
     },
@@ -129,7 +129,7 @@ export default function RFTTest() {
         testResults: formData.results,
         normalRanges,
         flags,
-        status: "completed",
+        status: "pending",
         performedBy: undefined,
         modifiedBy: undefined,
       });

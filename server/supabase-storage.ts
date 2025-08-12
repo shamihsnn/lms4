@@ -35,6 +35,30 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
+  private parseTest<T extends Test | (Test & { patient?: Patient })>(row: any): T {
+    if (!row) return row;
+    const clone: any = { ...row };
+    if (typeof clone.testResults === 'string') {
+      try { clone.testResults = JSON.parse(clone.testResults); } catch {}
+    }
+    if (typeof clone.normalRanges === 'string') {
+      try { clone.normalRanges = JSON.parse(clone.normalRanges); } catch {}
+    }
+    if (typeof clone.flags === 'string') {
+      try { clone.flags = JSON.parse(clone.flags); } catch {}
+    }
+    return clone as T;
+  }
+
+  private parseTemplate(row: any): TestTemplate {
+    if (!row) return row;
+    const clone: any = { ...row };
+    if (typeof clone.parameters === 'string') {
+      try { clone.parameters = JSON.parse(clone.parameters); } catch {}
+    }
+    return clone as TestTemplate;
+  }
+
   private async testConnection(): Promise<void> {
     try {
       // Simple connection test
@@ -76,14 +100,14 @@ export class SupabaseStorage implements IStorage {
     await db.update(adminUsers)
       .set({ 
         passwordHash, 
-        passwordChangedAt: new Date() 
+        passwordChangedAt: new Date().toISOString() 
       })
       .where(eq(adminUsers.id, id));
   }
 
   async updateLastLogin(id: number): Promise<void> {
     await db.update(adminUsers)
-      .set({ lastLogin: new Date() })
+      .set({ lastLogin: new Date().toISOString() })
       .where(eq(adminUsers.id, id));
   }
 
@@ -111,7 +135,7 @@ export class SupabaseStorage implements IStorage {
     const result = await db.update(patients)
       .set({ 
         ...patient, 
-        lastModified: new Date() 
+        lastModified: new Date().toISOString() 
       })
       .where(eq(patients.id, id))
       .returning();
@@ -179,7 +203,7 @@ export class SupabaseStorage implements IStorage {
     await db.update(patients)
       .set({ 
         patientId: newPatientId, 
-        lastModified: new Date(),
+        lastModified: new Date().toISOString(),
         modifiedBy: adminId 
       })
       .where(eq(patients.id, id));
@@ -198,20 +222,22 @@ export class SupabaseStorage implements IStorage {
   // Tests
   async getTest(id: number): Promise<Test | undefined> {
     const result = await db.select().from(tests).where(eq(tests.id, id)).limit(1);
-    return result[0];
+    return result[0] ? this.parseTest(result[0]) : undefined;
   }
 
   async getTestByTestId(testId: string): Promise<Test | undefined> {
     const result = await db.select().from(tests).where(eq(tests.testId, testId)).limit(1);
-    return result[0];
+    return result[0] ? this.parseTest(result[0]) : undefined;
   }
 
   async getAllTests(): Promise<Test[]> {
-    return await db.select().from(tests).orderBy(desc(tests.createdAt));
+    const rows = await db.select().from(tests).orderBy(desc(tests.createdAt));
+    return rows.map(r => this.parseTest<Test>(r));
   }
 
   async getTestsByPatient(patientId: number): Promise<Test[]> {
-    return await db.select().from(tests).where(eq(tests.patientId, patientId)).orderBy(desc(tests.createdAt));
+    const rows = await db.select().from(tests).where(eq(tests.patientId, patientId)).orderBy(desc(tests.createdAt));
+    return rows.map(r => this.parseTest<Test>(r));
   }
 
   async getAllTestsWithPatients(): Promise<(Test & { patient?: Patient })[]> {
@@ -250,7 +276,7 @@ export class SupabaseStorage implements IStorage {
     .leftJoin(patients, eq(tests.patientId, patients.id))
     .orderBy(desc(tests.createdAt));
 
-    return result.map(row => ({
+    return result.map(row => this.parseTest<Test & { patient?: Patient }>({
       id: row.id,
       testId: row.testId,
       patientId: row.patientId,
@@ -265,20 +291,21 @@ export class SupabaseStorage implements IStorage {
       createdAt: row.createdAt,
       lastModified: row.lastModified,
       modifiedBy: row.modifiedBy,
-      patient: row.patient.id ? row.patient : undefined,
+      patient: row.patient && row.patient.id ? row.patient : undefined,
     }));
   }
 
   async createTest(test: InsertTest): Promise<Test> {
+    // Assume JSON already stringified by route layer
     const result = await db.insert(tests).values(test).returning();
-    return result[0];
+    return this.parseTest(result[0]);
   }
 
   async updateTest(id: number, test: Partial<InsertTest>): Promise<Test> {
     const result = await db.update(tests)
       .set({ 
         ...test, 
-        lastModified: new Date() 
+        lastModified: new Date().toISOString() 
       })
       .where(eq(tests.id, id))
       .returning();
@@ -286,7 +313,7 @@ export class SupabaseStorage implements IStorage {
     if (result.length === 0) {
       throw new Error("Test not found");
     }
-    return result[0];
+    return this.parseTest(result[0]);
   }
 
   async deleteTest(id: number): Promise<void> {
@@ -343,7 +370,7 @@ export class SupabaseStorage implements IStorage {
     await db.update(tests)
       .set({ 
         testId: newTestId, 
-        lastModified: new Date(),
+        lastModified: new Date().toISOString(),
         modifiedBy: adminId 
       })
       .where(eq(tests.id, id));
@@ -371,14 +398,18 @@ export class SupabaseStorage implements IStorage {
 
   // Stats
   async getTodayTestsCount(): Promise<number> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const result = await db.select({ count: tests.id })
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const startStr = new Date(start.getTime() - start.getTimezoneOffset()*60000)
+      .toISOString()
+      .slice(0, 19)
+      .replace('T', ' ');
+
+    const rows = await db.select({ id: tests.id })
       .from(tests)
-      .where(gte(tests.createdAt, today));
+      .where(gte(tests.createdAt, startStr));
     
-    return result.length;
+    return rows.length;
   }
 
   async getTotalPatientsCount(): Promise<number> {
@@ -387,7 +418,7 @@ export class SupabaseStorage implements IStorage {
   }
 
   async getPendingReportsCount(): Promise<number> {
-    const result = await db.select({ count: tests.id })
+    const result = await db.select({ id: tests.id })
       .from(tests)
       .where(eq(tests.status, "pending"));
     
@@ -402,7 +433,7 @@ export class SupabaseStorage implements IStorage {
     let criticalCount = 0;
     for (const test of allTests) {
       if (test.flags) {
-        const flags = test.flags as any;
+        const flags = typeof test.flags === 'string' ? (() => { try { return JSON.parse(test.flags as any); } catch { return undefined; } })() : (test.flags as any);
         if (typeof flags === 'object' && Object.values(flags).some((flag: any) => flag === "CRITICAL")) {
           criticalCount++;
         }
@@ -414,12 +445,13 @@ export class SupabaseStorage implements IStorage {
 
   // Test templates
   async getAllTestTemplates(): Promise<TestTemplate[]> {
-    return await db.select().from(testTemplates).orderBy(desc(testTemplates.createdAt));
+    const rows = await db.select().from(testTemplates).orderBy(desc(testTemplates.createdAt));
+    return rows.map(r => this.parseTemplate(r));
   }
 
   async getTestTemplateByType(testType: string): Promise<TestTemplate | undefined> {
     const result = await db.select().from(testTemplates).where(eq(testTemplates.testType, testType)).limit(1);
-    return result[0];
+    return result[0] ? this.parseTemplate(result[0]) : undefined;
   }
 
   async upsertTestTemplate(template: InsertTestTemplate): Promise<TestTemplate> {
@@ -429,9 +461,9 @@ export class SupabaseStorage implements IStorage {
         .set({ parameters: template.parameters })
         .where(eq(testTemplates.id, (existing as any).id))
         .returning();
-      return updated[0] as TestTemplate;
+      return this.parseTemplate(updated[0]);
     }
     const inserted = await db.insert(testTemplates).values(template).returning();
-    return inserted[0] as TestTemplate;
+    return this.parseTemplate(inserted[0]);
   }
 }

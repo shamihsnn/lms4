@@ -73,7 +73,7 @@ export function printLabReport(options: {
       <title>${reportTitle} - ${testId}</title>
       <style>
         @page { size: A4; margin: 45mm 16mm 16mm 16mm; }
-        body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 13px; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 13px; margin-top: 60px; }
         .header { display: none; }
         .title { display: none; }
         .meta { display: none; }
@@ -128,11 +128,6 @@ export function printLabReport(options: {
       <div class="header"></div>
       
       <div class="patient-info">
-        <div class="patient-row">
-          <span class="patient-label">Report:</span>
-          <span class="patient-value">${generatedAt} ${reportTitle} - ${testId}</span>
-        </div>
-        <div class="patient-divider"></div>
         <div class="patient-row">
           <span class="patient-label">Patient Name:</span>
           <span class="patient-value">${patient?.name || "N/A"}</span>

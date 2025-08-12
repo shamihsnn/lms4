@@ -76,6 +76,10 @@ app.use((req, res, next) => {
   
   // Fixed for Windows compatibility - removed host and reusePort options
   server.listen(port, () => {
+    // Friendly startup banner and clickable URL
+    log("Al Qasim Labs Portal starting", "startup");
+    const localUrl = `http://localhost:${port}`;
+    log(`Local: ${localUrl}` , "startup");
     log(`serving on port ${port}`);
   });
 })();
