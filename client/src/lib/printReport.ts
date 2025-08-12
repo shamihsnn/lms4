@@ -75,33 +75,33 @@ export function printLabReport(options: {
       <title>${displayTitle} - ${testId}</title>
       <style>
         @page { size: A4; margin: 0; }
-        body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 14px; margin: 45mm 16mm 16mm 16mm; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 16px; margin: 45mm 16mm 16mm 16mm; }
         .header { display: none; }
         .title { display: none; }
         .meta { display: none; }
 
         /* Professional header */
         .report-header { display: flex; justify-content: space-between; align-items: end; margin-bottom: 10px; }
-        .report-title { font-size: 20px; font-weight: 700; letter-spacing: 0.2px; }
-        .report-submeta { font-size: 12px; color: #4b5563; text-align: right; }
+        .report-title { font-size: 24px; font-weight: 700; letter-spacing: 0.2px; }
+        .report-submeta { font-size: 14px; color: #4b5563; text-align: right; }
 
         /* Patient information grid */
         .patient-info { margin: 6px 0 12px; }
         .patient-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
-        .patient-item { display: flex; gap: 8px; font-size: 13px; }
+        .patient-item { display: flex; gap: 8px; font-size: 15px; }
         .patient-label { font-weight: 600; color: #374151; min-width: 110px; }
         .patient-value { color: #111827; font-weight: 500; }
 
         .divider { height: 1px; background: #e5e7eb; margin: 8px 0 12px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; font-size: 14px; }
-        thead th { background: #f9fafb; text-align: left; font-weight: 700; font-size: 14.5px; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; font-size: 16px; }
+        thead th { background: #f9fafb; text-align: left; font-weight: 700; font-size: 16.5px; }
         .value { font-weight: 600; }
         .flag-normal { color: #16a34a; }
         .flag-high { color: #dc2626; }
         .flag-abnormal { color: #b45309; }
         .footer { display: none; }
-        .notes { margin-top: 12px; font-size: 13px; display: ${minimal ? "none" : "block"}; }
+        .notes { margin-top: 12px; font-size: 15px; display: ${minimal ? "none" : "block"}; }
       </style>
     </head>
     <body>
