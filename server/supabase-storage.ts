@@ -398,16 +398,16 @@ export class SupabaseStorage implements IStorage {
 
   // Stats
   async getTodayTestsCount(): Promise<number> {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const startStr = new Date(start.getTime() - start.getTimezoneOffset()*60000)
-      .toISOString()
-      .slice(0, 19)
-      .replace('T', ' ');
+    // Get today's date in local timezone
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Convert to UTC for database comparison
+    const startOfDayUTC = today.toISOString().slice(0, 19).replace('T', ' ');
 
     const rows = await db.select({ id: tests.id })
       .from(tests)
-      .where(gte(tests.createdAt, startStr));
+      .where(gte(tests.createdAt, startOfDayUTC));
     
     return rows.length;
   }
