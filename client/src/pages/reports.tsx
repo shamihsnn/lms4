@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, UseQueryOptions } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
@@ -83,6 +83,7 @@ export default function Reports() {
   const [selectedTestType, setSelectedTestType] = useState<string>("all");
   const [selectedTest, setSelectedTest] = useState<TestWithPatient | null>(null);
   const [showTestReport, setShowTestReport] = useState(false);
+  const [firstAvailableTest, setFirstAvailableTest] = useState<TestWithPatient | null>(null);
 
   const { toast } = useToast();
 
@@ -90,6 +91,13 @@ export default function Reports() {
   const { data: tests = [], isLoading, error } = useQuery<TestWithPatient[]>({
     queryKey: ["/api/tests/with-patients"],
   });
+
+  // Update firstAvailableTest when tests are loaded
+  useEffect(() => {
+    if (tests && tests.length > 0 && !firstAvailableTest) {
+      setFirstAvailableTest(tests[0]);
+    }
+  }, [tests, firstAvailableTest]);
 
   // Get all patients for selection
   const { data: patients = [] } = useQuery<Patient[]>({
@@ -120,7 +128,7 @@ export default function Reports() {
   });
 
   // Filter tests based on selected patient and test type (defensive against nulls)
-  const filteredTests = (tests || []).filter((test) => {
+  const filteredTests = tests.filter((test: TestWithPatient) => {
     const safeSearch = (value: unknown) =>
       typeof value === "string" ? value.toLowerCase() : "";
 
@@ -139,17 +147,34 @@ export default function Reports() {
   });
 
   // Group tests by type for the selected patient
-  const testsByType = filteredTests.reduce((acc, test) => {
-    if (!acc[test.testType]) {
-      acc[test.testType] = [];
+  const testsByType: Record<string, TestWithPatient[]> = filteredTests.reduce((acc: Record<string, TestWithPatient[]>, test: TestWithPatient) => {
+    const type = test.testType || 'Other';
+    if (!acc[type]) {
+      acc[type] = [];
     }
-    acc[test.testType].push(test);
+    acc[type].push(test);
     return acc;
   }, {} as Record<string, TestWithPatient[]>);
 
+  // Handle Ctrl+P shortcut
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+        event.preventDefault(); // Prevent default print dialog
+        if (firstAvailableTest) {
+          setSelectedTest(firstAvailableTest);
+          setShowTestReport(true); // Show the modal
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [firstAvailableTest]);
+
   // Get unique test types for filter
   const testTypes = Array.from(
-    new Set((tests || []).map((test) => test.testType).filter(Boolean)),
+    new Set(tests.map((test: TestWithPatient) => test.testType || '').filter(Boolean)),
   ).sort();
 
   const handleViewTest = (test: TestWithPatient) => {
@@ -443,6 +468,7 @@ export default function Reports() {
           onClose={handleCloseTestReport}
           test={selectedTest}
           parameters={testParameterMap[selectedTest.testType] || []}
+          autoPrint={firstAvailableTest === selectedTest} // Only auto-print if this was triggered by Ctrl+P
         />
       )}
     </div>

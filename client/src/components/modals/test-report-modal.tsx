@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,10 +24,20 @@ interface TestReportModalProps {
   test: TestWithPatient | null;
   parameters: readonly TestParameter[];
   referredBy?: string;
+  autoPrint?: boolean;
 }
 
-export default function TestReportModal({ isOpen, onClose, test, parameters = [], referredBy }: TestReportModalProps) {
+export default function TestReportModal({ isOpen, onClose, test, parameters = [], referredBy, autoPrint = false }: TestReportModalProps) {
   const [isPrinting, setIsPrinting] = useState(false);
+  const [hasPrintAttempted, setHasPrintAttempted] = useState(false);
+
+  // Effect for auto-printing
+  useEffect(() => {
+    if (autoPrint && test && !hasPrintAttempted) {
+      handlePrint();
+      setHasPrintAttempted(true);
+    }
+  }, [autoPrint, test, hasPrintAttempted]);
 
   const handlePrint = () => {
     if (!test) return;
