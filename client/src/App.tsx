@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Patients from "@/pages/patients";
@@ -42,6 +43,7 @@ import NotFound from "@/pages/not-found";
 
 function AppContent() {
   const { user, isLoading } = useAuth();
+  useKeyboardShortcuts(); // Add keyboard shortcuts support
 
   if (isLoading) {
     return (
@@ -64,6 +66,7 @@ function AppContent() {
       <div className="flex-1 ml-64">
         <Switch>
           <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
           <Route path="/patients" component={Patients} />
           <Route path="/reports" component={Reports} />
           <Route path="/tests/cbc" component={CBCTest} />
