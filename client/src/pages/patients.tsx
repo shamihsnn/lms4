@@ -23,10 +23,12 @@ export default function Patients() {
     gender: "",
     phone: "",
     address: "",
+    refByDoctor: "",
   });
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPatientReport, setShowPatientReport] = useState(false);
+  const [reportRefByDoctor, setReportRefByDoctor] = useState<string>("");
 
   const { toast } = useToast();
 
@@ -60,6 +62,7 @@ export default function Patients() {
           gender: "",
           phone: "",
           address: "",
+          refByDoctor: "",
         });
       }, 100);
       
@@ -128,6 +131,7 @@ export default function Patients() {
     }
 
     try {
+      const currentForm = { ...formData };
       await createPatientMutation.mutateAsync({
         patientId: formData.patientId,
         name: formData.name,
@@ -138,6 +142,14 @@ export default function Patients() {
         createdBy: undefined,
         modifiedBy: undefined,
       });
+      // Save Ref by Doctor locally (not in DB) keyed by Patient ID
+      try {
+        if (currentForm.patientId) {
+          localStorage.setItem(`refByDoctor:${currentForm.patientId}`, currentForm.refByDoctor || "");
+        }
+      } catch (err) {
+        // ignore localStorage errors (e.g., unavailable in some environments)
+      }
     } catch (error: any) {
       toast({
         title: "Registration Failed",
@@ -180,6 +192,14 @@ export default function Patients() {
 
   const handleViewPatient = (patient: Patient) => {
     setSelectedPatient(patient);
+    // Fetch locally saved Ref by Doctor for this patient ID
+    let refName = "";
+    try {
+      if (patient?.patientId) {
+        refName = localStorage.getItem(`refByDoctor:${patient.patientId}`) || "";
+      }
+    } catch {}
+    setReportRefByDoctor(refName);
     setShowPatientReport(true);
   };
 
@@ -277,6 +297,17 @@ export default function Patients() {
                 value={formData.phone}
                 onChange={handleInputChange}
                 placeholder="Enter phone number"
+              />
+            </div>
+
+            <div>
+              <Label className="block text-sm font-medium text-slate-700 mb-2">Ref by Doctor</Label>
+              <Input
+                type="text"
+                name="refByDoctor"
+                value={formData.refByDoctor}
+                onChange={handleInputChange}
+                placeholder="Enter referring doctor name"
               />
             </div>
 
@@ -419,6 +450,7 @@ export default function Patients() {
         isOpen={showPatientReport}
         onClose={handleClosePatientReport}
         patient={selectedPatient}
+        refByDoctor={reportRefByDoctor}
       />
     </div>
   );

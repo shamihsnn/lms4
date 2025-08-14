@@ -154,6 +154,13 @@ export default function Reports() {
 
   const handleViewTest = (test: TestWithPatient) => {
     setSelectedTest(test);
+    // Get referredBy from localStorage if patient exists
+    let referredBy = "";
+    if (test.patient?.patientId) {
+      try {
+        referredBy = localStorage.getItem(`refByDoctor:${test.patient.patientId}`) || "";
+      } catch {}
+    }
     setShowTestReport(true);
   };
 

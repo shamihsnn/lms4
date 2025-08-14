@@ -23,9 +23,10 @@ interface TestReportModalProps {
   onClose: () => void;
   test: TestWithPatient | null;
   parameters: readonly TestParameter[];
+  referredBy?: string;
 }
 
-export default function TestReportModal({ isOpen, onClose, test, parameters = [] }: TestReportModalProps) {
+export default function TestReportModal({ isOpen, onClose, test, parameters = [], referredBy }: TestReportModalProps) {
   const [isPrinting, setIsPrinting] = useState(false);
 
   const handlePrint = () => {
@@ -47,6 +48,14 @@ export default function TestReportModal({ isOpen, onClose, test, parameters = []
         },
       );
 
+      // Get referredBy either from props or try to get from localStorage
+      let doctorName = referredBy;
+      if (!doctorName && test.patient?.patientId) {
+        try {
+          doctorName = localStorage.getItem(`refByDoctor:${test.patient.patientId}`) || undefined;
+        } catch {}
+      }
+
       printLabReport({
         reportTitle: "FINAL REPORT",
         testId: test.testId,
@@ -54,6 +63,7 @@ export default function TestReportModal({ isOpen, onClose, test, parameters = []
         patient: test.patient,
         rows,
         minimal: true,
+        referredBy: doctorName,
       });
     } finally {
       setTimeout(() => setIsPrinting(false), 300);

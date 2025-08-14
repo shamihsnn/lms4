@@ -1,23 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Printer, FileText, AlertCircle } from "lucide-react";
 import type { Patient, Test } from "@shared/schema";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface PatientReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   patient: Patient | null;
+  refByDoctor?: string;
 }
 
 interface TestWithPatient extends Test {
   patient?: Patient;
 }
 
-export default function PatientReportModal({ isOpen, onClose, patient }: PatientReportModalProps) {
+export default function PatientReportModal({ isOpen, onClose, patient, refByDoctor }: PatientReportModalProps) {
   const [isPrinting, setIsPrinting] = useState(false);
+  const [localRefByDoctor, setLocalRefByDoctor] = useState<string>(refByDoctor || "");
+
+  // Keep local state in sync with prop when modal opens or prop changes
+  useEffect(() => {
+    setLocalRefByDoctor(refByDoctor || "");
+  }, [refByDoctor, isOpen]);
 
   // Get tests for the patient
   const { data: tests = [], isLoading } = useQuery<TestWithPatient[]>({
@@ -26,30 +35,61 @@ export default function PatientReportModal({ isOpen, onClose, patient }: Patient
   });
 
   const handlePrint = () => {
-    if (!patient || tests.length === 0) return;
+    if (!patient) return;
+
+    // Persist latest value so print fallback can always read it
+    try {
+      if (patient?.patientId) {
+        localStorage.setItem(`refByDoctor:${patient.patientId}`, localRefByDoctor || "");
+      }
+    } catch {}
 
     setIsPrinting(true);
-    const printContent = generatePrintContent();
-    const printWindow = window.open('', '_blank');
-    
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
+    const printContent = generatePrintContent(localRefByDoctor);
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const iframeWindow = iframe.contentWindow;
+    if (iframeWindow) {
+      iframeWindow.document.open();
+      iframeWindow.document.write(printContent);
+      iframeWindow.document.close();
+
+      iframeWindow.onafterprint = () => {
+        document.body.removeChild(iframe);
         setIsPrinting(false);
-      }, 250);
+      };
+
+      iframeWindow.focus();
+      iframeWindow.print();
     } else {
+      document.body.removeChild(iframe);
       setIsPrinting(false);
     }
   };
 
-  const generatePrintContent = () => {
+  const generatePrintContent = (refByDoctorValue: string) => {
     if (!patient) return '';
 
     const currentDate = new Date().toLocaleDateString();
+    // Robust fallback for Ref by Doctor used in printed report
+    const refValue = (() => {
+      const fromProp = (refByDoctorValue ?? '').trim();
+      if (fromProp) return fromProp;
+      // Try localStorage using patientId key
+      try {
+        if (patient?.patientId) {
+          const ls = (localStorage.getItem(`refByDoctor:${patient.patientId}`) || '').trim();
+          if (ls) return ls;
+        }
+      } catch {}
+      // Fallback to any value present on the patient object
+      // @ts-expect-error legacy field may not exist on type
+      const fromPatient = (patient.refByDoctor ?? '').toString().trim?.() || '';
+      return fromPatient;
+    })();
     const testsByType = tests.reduce((acc, test) => {
       if (!acc[test.testType]) {
         acc[test.testType] = [];
@@ -89,6 +129,7 @@ export default function PatientReportModal({ isOpen, onClose, patient }: Patient
           @media print {
             body { margin: 15px; }
             .test-section { page-break-inside: avoid; }
+            .info-grid { grid-template-columns: 1fr; /* Single column for printing */ }
           }
         </style>
       </head>
@@ -120,6 +161,10 @@ export default function PatientReportModal({ isOpen, onClose, patient }: Patient
             <div class="info-item">
               <span class="info-label">Phone:</span>
               <span class="info-value">${patient.phone || 'N/A'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Ref by Doctor:</span>
+              <span class="info-value">${refValue || 'N/A'}</span>
             </div>
             <div class="info-item">
               <span class="info-label">Report Date:</span>
@@ -224,6 +269,34 @@ export default function PatientReportModal({ isOpen, onClose, patient }: Patient
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Ref by Doctor control for on-screen and printing */}
+          <div className="grid grid-cols-1 md:grid-cols-3 items-end gap-4">
+            <div className="md:col-span-2">
+              <Label className="block text-sm font-medium text-slate-700 mb-2">Ref by Doctor</Label>
+              <Input
+                type="text"
+                value={localRefByDoctor}
+                onChange={(e) => setLocalRefByDoctor(e.target.value)}
+                placeholder="Enter referring doctor name"
+              />
+            </div>
+            <div>
+              <Button
+                type="button"
+                onClick={() => {
+                  try {
+                    if (patient?.patientId) {
+                      localStorage.setItem(`refByDoctor:${patient.patientId}`, localRefByDoctor || "");
+                    }
+                  } catch {}
+                }}
+                className="bg-[var(--medical-primary)] hover:bg-[var(--medical-primary-dark)] w-full"
+              >
+                Save Ref Doctor
+              </Button>
+            </div>
+          </div>
+
           {/* Patient Info */}
           <Card>
             <CardHeader>
@@ -250,6 +323,10 @@ export default function PatientReportModal({ isOpen, onClose, patient }: Patient
                 <div>
                   <span className="font-medium text-slate-600">Phone:</span>
                   <p className="font-semibold">{patient?.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-600">Ref by Doctor:</span>
+                  <p className="font-semibold">{localRefByDoctor || 'N/A'}</p>
                 </div>
               </div>
               {patient?.address && (
