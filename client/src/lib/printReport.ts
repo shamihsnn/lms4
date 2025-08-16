@@ -50,16 +50,37 @@ export function printLabReport(options: {
     }
   };
 
+  // Try to infer unit from the normal range text if unit is missing.
+  // Examples:
+  //  - "0.7-1.3 mg/dL" => "mg/dL"
+  //  - "<10 U/mL" => "U/mL"
+  //  - "Negative" => "" (no unit)
+  const inferUnitFromRange = (range?: string): string => {
+    if (!range) return "";
+    // trim trailing spaces
+    const trimmed = range.trim();
+    // Match last token that looks like a unit (letters, micro symbol, slash combos)
+    const match = trimmed.match(/([A-Za-z%µμ]+(?:\/[A-Za-z]+){0,2})\s*$/);
+    if (!match) return "";
+    const token = match[1];
+    // Heuristic: if token is a comparator-only or purely alphabetic word like "Negative", "Positive", ignore
+    if (/^(Negative|Positive|Normal|normal|NEGATIVE|POSITIVE)$/i.test(trimmed)) return "";
+    // Basic filter: must contain at least one letter and either be >1 char or contain a slash
+    if (!/[A-Za-zµμ]/.test(token)) return "";
+    return token;
+  };
+
   const tableRows = rows
     .map((r) => {
       const valueDisplay = r.value === undefined || r.value === null || r.value === ""
         ? ""
         : `${r.value}`;
+      const unitDisplay = (r.unit && r.unit.trim()) ? r.unit : inferUnitFromRange(r.normalRange);
       return `
         <tr>
           <td>${r.parameterLabel}</td>
           <td class="value ${getFlagClass(r.flag)}">${valueDisplay}</td>
-          <td>${r.unit || ""}</td>
+          <td>${unitDisplay || ""}</td>
           <td>${r.normalRange || ""}</td>
           <td class="flag ${getFlagClass(r.flag)}">${r.flag || ""}</td>
         </tr>

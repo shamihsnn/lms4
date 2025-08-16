@@ -36,7 +36,12 @@ import HCVTest from "@/pages/tests/hcv";
 import HIVTest from "@/pages/tests/hiv";
 import CreatinineTest from "@/pages/tests/creatinine";
 import BilirubinTest from "@/pages/tests/bilirubin";
+import AmylaseTest from "@/pages/tests/amylase";
 import HBsAgTest from "@/pages/tests/hbsag";
+import BetaHCGUrineTest from "@/pages/tests/beta-hcg-urine";
+import BetaHCGBloodTest from "@/pages/tests/beta-hcg-blood";
+import HPyloriStoolAntigenTest from "@/pages/tests/h-pylori-stool-antigen";
+import HPyloriAntibodiesTest from "@/pages/tests/h-pylori-antibodies";
 import CustomBuilder from "@/pages/tests/custom-builder";
 import Sidebar from "@/components/layout/sidebar";
 import NotFound from "@/pages/not-found";
@@ -96,7 +101,12 @@ function AppContent() {
           <Route path="/tests/hiv" component={HIVTest} />
           <Route path="/tests/creatinine" component={CreatinineTest} />
           <Route path="/tests/bilirubin" component={BilirubinTest} />
+          <Route path="/tests/amylase" component={AmylaseTest} />
           <Route path="/tests/hbsag" component={HBsAgTest} />
+          <Route path="/tests/beta-hcg-urine" component={BetaHCGUrineTest} />
+          <Route path="/tests/beta-hcg-blood" component={BetaHCGBloodTest} />
+          <Route path="/tests/h-pylori-stool-antigen" component={HPyloriStoolAntigenTest} />
+          <Route path="/tests/h-pylori-antibodies" component={HPyloriAntibodiesTest} />
           <Route path="/tests/custom-builder" component={CustomBuilder} />
           <Route component={NotFound} />
         </Switch>
