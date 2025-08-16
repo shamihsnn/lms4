@@ -203,6 +203,20 @@ const testTypes = [
     color: "bg-cyan-100 text-cyan-600"
   },
   { 
+    name: "Bile Salts", 
+    href: "/tests/bile-salts", 
+    icon: FlaskConical, 
+    description: "Serum bile salts (0.5-10 µmol/L)",
+    color: "bg-teal-100 text-teal-700"
+  },
+  { 
+    name: "ASOT", 
+    href: "/tests/asot", 
+    icon: Thermometer, 
+    description: "Anti-Streptolysin O Titer",
+    color: "bg-amber-100 text-amber-700"
+  },
+  { 
     name: "Custom Builder", 
     href: "/tests/custom-builder", 
     icon: FlaskConical, 

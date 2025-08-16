@@ -58,6 +58,8 @@ const testNavigation = [
   { name: "Bilirubin", href: "/tests/bilirubin", icon: FlaskConical },
   { name: "Amylase", href: "/tests/amylase", icon: FlaskConical },
   { name: "HBsAg", href: "/tests/hbsag", icon: Thermometer },
+  { name: "Bile Salts", href: "/tests/bile-salts", icon: FlaskConical },
+  { name: "ASOT", href: "/tests/asot", icon: Thermometer },
   { name: "Beta hCG (Urine)", href: "/tests/beta-hcg-urine", icon: Thermometer },
   { name: "Beta hCG (Blood)", href: "/tests/beta-hcg-blood", icon: Thermometer },
   { name: "H. pylori Stool Ag", href: "/tests/h-pylori-stool-antigen", icon: FlaskConical },
