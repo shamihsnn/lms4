@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,6 +20,7 @@ import {
   Eye,
   Trash2
 } from "lucide-react";
+import { printLabReport, printLabReportsTwoUp, type ReportRow, type PrintOptions } from "@/lib/printReport";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { Test, Patient } from "@shared/schema";
 import TestReportModal from "../components/modals/test-report-modal";
@@ -84,6 +86,7 @@ export default function Reports() {
   const [selectedTest, setSelectedTest] = useState<TestWithPatient | null>(null);
   const [showTestReport, setShowTestReport] = useState(false);
   const [firstAvailableTest, setFirstAvailableTest] = useState<TestWithPatient | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const { toast } = useToast();
 
@@ -176,6 +179,79 @@ export default function Reports() {
   const testTypes = Array.from(
     new Set(tests.map((test: TestWithPatient) => test.testType || '').filter(Boolean)),
   ).sort();
+
+  const toggleSelect = (id: number, checked: boolean | string | undefined) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
+  const allVisibleIds = filteredTests.map(t => t.id as number).filter(Boolean);
+  const allChecked = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.has(id));
+  const someChecked = allVisibleIds.some(id => selectedIds.has(id)) && !allChecked;
+
+  const toggleSelectAllVisible = (checked: boolean | string | undefined) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (checked) {
+        allVisibleIds.forEach(id => next.add(id));
+      } else {
+        allVisibleIds.forEach(id => next.delete(id));
+      }
+      return next;
+    });
+  };
+
+  const buildRowsFromTest = (test: TestWithPatient): ReportRow[] => {
+    const params = testParameterMap[test.testType] || [];
+    const results = (test.testResults as Record<string, any>) || {};
+    const normals = (test.normalRanges as Record<string, any>) || {};
+    const flags = (test.flags as Record<string, any>) || {};
+    return Object.entries(results).map(([param, value]) => {
+      const parameter = params.find(p => p.name === param);
+      return {
+        parameterLabel: parameter?.label || param.replace(/([A-Z])/g, " $1").trim(),
+        value: value as string | number,
+        unit: parameter?.unit,
+        normalRange: (normals as any)[param] as string | undefined,
+        flag: ((flags as any)[param] as ReportRow["flag"]) || "",
+      };
+    });
+  };
+
+  const buildPrintOptions = (test: TestWithPatient): PrintOptions => {
+    let referredBy: string | undefined = undefined;
+    if (test.patient?.patientId) {
+      try { referredBy = localStorage.getItem(`refByDoctor:${test.patient.patientId}`) || undefined; } catch {}
+    }
+    return {
+      reportTitle: "FINAL REPORT",
+      testId: test.testId,
+      testType: `${test.testType}`,
+      patient: test.patient,
+      rows: buildRowsFromTest(test),
+      minimal: true,
+      referredBy,
+    };
+  };
+
+  const handlePrintSelected = () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (ids.length > 2) {
+      toast({ title: "Select up to 2 reports", description: "You can print one report or combine two reports on one page.", variant: "destructive" });
+      return;
+    }
+    const selectedTests = tests.filter(t => ids.includes(t.id as number));
+    if (selectedTests.length === 1) {
+      printLabReport(buildPrintOptions(selectedTests[0] as TestWithPatient));
+    } else if (selectedTests.length === 2) {
+      const opts = selectedTests.slice(0,2).map(t => buildPrintOptions(t as TestWithPatient));
+      printLabReportsTwoUp(opts);
+    }
+  };
 
   const handleViewTest = (test: TestWithPatient) => {
     setSelectedTest(test);
@@ -318,6 +394,32 @@ export default function Reports() {
         </Card>
       )}
 
+      {/* Selection toolbar */}
+      <Card>
+        <CardContent className="flex items-center justify-between py-4 gap-4">
+          <div className="text-sm text-slate-700">
+            <strong>{selectedIds.size}</strong> selected
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={selectedIds.size === 0}
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Clear Selection
+            </Button>
+            <Button
+              className="bg-[var(--medical-primary)] hover:bg-[var(--medical-primary-dark)] text-white"
+              disabled={selectedIds.size === 0 || selectedIds.size > 2}
+              onClick={handlePrintSelected}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              {selectedIds.size === 2 ? "Print 2-in-1" : "Print Selected"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Test Reports by Type */}
        {isLoading ? (
         <div className="flex justify-center py-12">
@@ -361,6 +463,14 @@ export default function Reports() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[40px]">
+                        <Checkbox
+                          checked={allChecked}
+                          onCheckedChange={toggleSelectAllVisible}
+                          aria-label="Select all visible"
+                          className={someChecked ? "data-[state=indeterminate]:opacity-100" : ""}
+                        />
+                      </TableHead>
                       <TableHead>Test ID</TableHead>
                       <TableHead>Patient</TableHead>
                       <TableHead>Test Date</TableHead>
@@ -372,6 +482,13 @@ export default function Reports() {
                   <TableBody>
                     {typeTests.map((test) => (
                       <TableRow key={test.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.has(test.id as number)}
+                            onCheckedChange={(v) => toggleSelect(test.id as number, v)}
+                            aria-label={`Select ${test.testId}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           {test.testId}
                         </TableCell>
@@ -417,6 +534,15 @@ export default function Reports() {
                             >
                               <Eye className="h-3 w-3" />
                               View Report
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => printLabReport(buildPrintOptions(test))}
+                              className="flex items-center gap-1"
+                            >
+                              <Printer className="h-3 w-3" />
+                              Print
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
