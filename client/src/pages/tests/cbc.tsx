@@ -49,14 +49,14 @@ export const cbcParameters = [
   },
   { name: "platelets", label: "Platelets", unit: "×10³/μL", normalRange: "150-450", step: "1", notes: "150000-450000 (10^9/L)" },
   { name: "mcv", label: "MCV", unit: "fL", normalRange: "80-102", step: "0.1" },
+  { name: "mch", label: "MCH", unit: "pg", normalRange: "27-32", step: "0.1" },
+  { name: "mchc", label: "MCHC", unit: "%", normalRange: "31-35", step: "0.1" },
+  { name: "hct", label: "HCT", unit: "%", normalRange: "40-54", step: "0.1", notes: "M: 40-54%; F: 37-47%" },
   // Differential (adult defaults) with child notes
   { name: "neutrophils", label: "Neutrophils", unit: "%", normalRange: "45-70", step: "0.1", notes: "Ad: 45-70%; Ch: 20-50%" },
   { name: "lymphocytes", label: "Lymphocytes", unit: "%", normalRange: "20-40", step: "0.1", notes: "Ad: 20-40%; Ch: 50-70%" },
   { name: "monocytes", label: "Monocytes", unit: "%", normalRange: "2-7", step: "0.1", notes: "Ad: 02-07%; Ch: 06-10%" },
   { name: "eosinophils", label: "Eosinophils", unit: "%", normalRange: "1-4", step: "0.1", notes: "Ad: 01-04%; Ch: 02-08%" },
-  { name: "hct", label: "HCT", unit: "%", normalRange: "40-54", step: "0.1", notes: "M: 40-54%; F: 37-47%" },
-  { name: "mch", label: "MCH", unit: "pg", normalRange: "27-32", step: "0.1" },
-  { name: "mchc", label: "MCHC", unit: "%", normalRange: "31-35", step: "0.1" },
 ] as const;
 
 export default function CBCTest() {
@@ -297,12 +297,12 @@ export default function CBCTest() {
   };
 
   // Group parameters for better organization
-  const basicParameters = cbcParameters.slice(0, 6);
+  const differentialNames = ['neutrophils', 'lymphocytes', 'monocytes', 'eosinophils'] as const;
   const differentialParameters = cbcParameters.filter(p => 
-    ['neutrophils', 'lymphocytes', 'monocytes', 'eosinophils'].includes(p.name)
+    differentialNames.includes(p.name as (typeof differentialNames)[number])
   );
-  const additionalParameters = cbcParameters.filter(p => 
-    ['hct', 'mch', 'mchc'].includes(p.name)
+  const basicParameters = cbcParameters.filter(p => 
+    !differentialNames.includes(p.name as (typeof differentialNames)[number])
   );
 
   // Type of a single CBC parameter item
@@ -541,7 +541,7 @@ export default function CBCTest() {
               
               {renderParameterGroup(basicParameters, "Basic Parameters")}
               {renderParameterGroup(differentialParameters, "Differential Count")}
-              {renderParameterGroup(additionalParameters, "Additional Indices")}
+              {/* Additional Indices removed; MCH, MCHC, HCT are now part of Basic Parameters */}
             </div>
 
             {/* Comments */}
