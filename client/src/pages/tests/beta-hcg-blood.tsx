@@ -11,7 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InsertTest, Patient } from "@shared/schema";
 import { Edit3, Printer } from "lucide-react";
 import EditIdModal from "@/components/modals/edit-id-modal";
-import { printLabReport, queueTwoUpReport, type ReportRow } from "@/lib/printReport";
+import { printLabReport, type ReportRow } from "@/lib/printReport";
 
 // Beta hCG pregnancy week reference ranges (mIU/mL)
 const weekRanges: Record<string, string> = {
@@ -125,36 +125,6 @@ export default function BetaHCGBloodTest() {
     });
   };
 
-  const handleTwoUpQueue = () => {
-    const patient = patients.find(p => p.patientId === formData.patientId);
-    const vStr = formData.value || "";
-    const v = vStr ? parseFloat(vStr) : NaN;
-    const flag = calcFlag(isNaN(v) ? null : v);
-    const selWeek = formData.week || "";
-    const weekLabel = selWeek ? `${selWeek} weeks` : "N/A";
-    const weekRangeDisplay = selWeek && weekRanges[selWeek]
-      ? `${formatRange(weekRanges[selWeek])} mIU/mL`
-      : `${nonPregnantFemaleNormal} mIU/mL`;
-    const rows: ReportRow[] = [
-      { parameterLabel: "Beta hCG (Serum)", value: vStr, unit: "mIU/mL", normalRange: weekRangeDisplay, flag },
-      { parameterLabel: "Gestational Age", value: weekLabel, normalRange: "", flag: "" },
-    ];
-    const notes: string = selWeek
-      ? `Selected week ${selWeek} reference: ${weekRangeDisplay}. Non-pregnant reference: ${nonPregnantFemaleNormal} mIU/mL. General healthy (male/female): ${healthyMaleFemale} mIU/mL.`
-      : `Non-pregnant reference: ${nonPregnantFemaleNormal} mIU/mL. General healthy (male/female): ${healthyMaleFemale} mIU/mL.`;
-    const combinedComments = [formData.comments?.trim(), notes].filter(Boolean).join("\n");
-
-    queueTwoUpReport({
-      reportTitle: "FINAL REPORT",
-      testId: formData.testId,
-      testType: "Beta hCG (Serum, Quantitative)",
-      patient,
-      rows,
-      comments: combinedComments,
-      minimal: false,
-    });
-  };
-
   const handlePrint = () => {
     const patient = patients.find(p => p.patientId === formData.patientId);
     const vStr = formData.value || "";
@@ -248,10 +218,9 @@ export default function BetaHCGBloodTest() {
               <Textarea rows={3} value={formData.comments} onChange={(e) => setFormData(p => ({ ...p, comments: e.target.value }))} />
             </div>
 
-            <div className="flex gap-4 flex-wrap">
+            <div className="flex gap-4">
               <Button type="submit" disabled={createTestMutation.isPending} className="bg-[var(--medical-primary)] hover:bg-[var(--medical-primary-dark)] text-white">{createTestMutation.isPending ? "Saving..." : "Save Results"}</Button>
               <Button type="button" variant="outline" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" /> Print Report</Button>
-              <Button type="button" variant="secondary" onClick={handleTwoUpQueue}>Add to 2-in-1 Print</Button>
             </div>
           </form>
         </CardContent>
