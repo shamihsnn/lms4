@@ -150,6 +150,7 @@ const inferUnitFromRange = (range?: string): string => {
 };
 
 // Render a single report section (used by both single and two-up)
+// Added `showPatientInfo` flag to control whether patient details are printed.
 function renderSingleReportSection(args: {
   displayTitle: string;
   testId: string;
@@ -159,18 +160,23 @@ function renderSingleReportSection(args: {
   tableRows: string;
   comments?: string;
   minimal?: boolean;
+  showPatientInfo?: boolean; // NEW - default true
 }): string {
-  const { displayTitle, testId, generatedAt, patient, referredBy, tableRows, comments, minimal } = args;
-  return `
-      <div class="header"></div>
-      <div class="report-header">
-        <div class="report-title">${displayTitle}</div>
-        <div class="report-submeta">
-          <div>Test ID: ${testId}</div>
-          <div>Generated: ${generatedAt}</div>
-        </div>
-      </div>
+  const { displayTitle, testId, generatedAt, patient, referredBy, tableRows, comments, minimal, showPatientInfo = true } = args;
 
+  // Compact header used when patient info is suppressed (two-up second report)
+  const compactHeader = `
+    <div class="report-header">
+      <div class="report-title">${displayTitle}</div>
+      <div class="report-submeta">
+        <div>Test ID: ${testId}</div>
+        <div>Generated: ${generatedAt}</div>
+      </div>
+    </div>
+  `;
+
+  // Full patient info block (existing markup)
+  const patientInfoBlock = `
       <div class="patient-info">
         <div class="patient-grid">
           <div class="patient-item"><span class="patient-label">Patient Name:</span><span class="patient-value">${patient?.name || "N/A"}</span></div>
@@ -180,6 +186,12 @@ function renderSingleReportSection(args: {
           ${referredBy ? `<div class="patient-item"><span class="patient-label">Ref. By:</span><span class="patient-value">${referredBy}</span></div>` : ''}
         </div>
       </div>
+  `;
+
+  return `
+      <div class="header"></div>
+      ${compactHeader}
+      ${showPatientInfo ? patientInfoBlock : ''}
       
       <div class="divider"></div>
       <table>
@@ -206,7 +218,7 @@ export function printLabReportsTwoUp(reports: PrintOptions[]): void {
   const items = reports.slice(0, 2);
   if (items.length === 0) return;
 
-  const sections = items.map((opt) => {
+  const sections = items.map((opt, idx) => {
     const now = new Date();
     const generatedAt = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
     const displayTitle = (opt.reportTitle && opt.reportTitle.toUpperCase() !== "FINAL REPORT") ? opt.reportTitle : opt.testType;
@@ -224,6 +236,7 @@ export function printLabReportsTwoUp(reports: PrintOptions[]): void {
         </tr>`;
     }).join("");
 
+    // For two-up printing: show patient info only for the first section (idx === 0).
     return renderSingleReportSection({
       displayTitle,
       testId: opt.testId,
@@ -233,6 +246,7 @@ export function printLabReportsTwoUp(reports: PrintOptions[]): void {
       tableRows,
       comments: opt.comments,
       minimal: opt.minimal,
+      showPatientInfo: idx === 0, // NEW - only first section gets patient block
     });
   }).join('<div style="height:19mm"></div>');
 

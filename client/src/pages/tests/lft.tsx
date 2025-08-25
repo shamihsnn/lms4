@@ -8,12 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Edit3, Printer, Check, X } from "lucide-react";
+import { Edit3, Printer } from "lucide-react";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTest } from "@shared/schema";
 import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
+import { TestPageLayout } from "@/components/layouts/test-page-layout";
 
 export const lftParameters = [
   { name: "alt", label: "ALT (SGPT)", unit: "U/L", normalRange: "7-56", step: "1" },
@@ -181,16 +182,12 @@ export default function LFTTest() {
     });
   };
 
-  // legacy generator removed in favor of printLabReport
-
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">LFT Test - Liver Function Test</h1>
-        <p className="text-slate-600">Comprehensive liver function analysis</p>
-      </div>
-
-      <Card>
+    <TestPageLayout 
+      title="Liver Function Test (LFT)"
+      description="Comprehensive liver enzyme and function analysis"
+    >
+      <Card className="flex-1">
         <CardHeader>
           <CardTitle>New LFT Test</CardTitle>
         </CardHeader>
@@ -326,6 +323,8 @@ export default function LFTTest() {
         idType="Test"
         onUpdate={handleIdUpdate}
       />
-    </div>
+    </TestPageLayout>
   );
 }
+
+

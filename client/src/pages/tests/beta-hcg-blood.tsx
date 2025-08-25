@@ -12,6 +12,7 @@ import type { InsertTest, Patient } from "@shared/schema";
 import { Edit3, Printer } from "lucide-react";
 import EditIdModal from "@/components/modals/edit-id-modal";
 import { printLabReport, type ReportRow } from "@/lib/printReport";
+import { Footer } from "@/components/ui/footer";
 
 // Beta hCG pregnancy week reference ranges (mIU/mL)
 const weekRanges: Record<string, string> = {
@@ -159,12 +160,13 @@ export default function BetaHCGBloodTest() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-8 min-h-screen flex flex-col">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800">Beta hCG (Blood, Quantitative)</h1>
         <p className="text-slate-600">Select pregnancy week to auto-apply reference ranges</p>
       </div>
-      <Card>
+
+      <Card className="flex-1">
         <CardHeader>
           <CardTitle>New Beta hCG (Serum) Test</CardTitle>
         </CardHeader>
@@ -227,6 +229,8 @@ export default function BetaHCGBloodTest() {
       </Card>
 
       <EditIdModal isOpen={editingTestId} onClose={() => setEditingTestId(false)} currentId={formData.testId} idType="Test" onUpdate={(newId) => setFormData(p => ({ ...p, testId: newId }))} />
+
+      <Footer />
     </div>
   );
 }

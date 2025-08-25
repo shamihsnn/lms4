@@ -203,6 +203,27 @@ const testTypes = [
     color: "bg-cyan-100 text-cyan-600"
   },
   { 
+    name: "H. pylori (Blood, Qual)", 
+    href: "/tests/h-pylori-blood-qual", 
+    icon: FlaskConical, 
+    description: "Qualitative antibody (Positive/Negative)",
+    color: "bg-teal-100 text-teal-600"
+  },
+  { 
+    name: "H. pylori Stool Ag (Qual)", 
+    href: "/tests/h-pylori-stool-antigen", 
+    icon: FlaskConical, 
+    description: "Stool antigen qualitative",
+    color: "bg-teal-100 text-teal-700"
+  },
+  { 
+    name: "H. pylori Antibodies (IgG/IgM/IgA)", 
+    href: "/tests/h-pylori-antibodies", 
+    icon: FlaskConical, 
+    description: "Quantitative serology",
+    color: "bg-teal-100 text-teal-800"
+  },
+  { 
     name: "Bile Salts", 
     href: "/tests/bile-salts", 
     icon: FlaskConical, 

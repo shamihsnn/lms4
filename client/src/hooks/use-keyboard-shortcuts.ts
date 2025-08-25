@@ -257,54 +257,24 @@ export function useKeyboardShortcuts() {
     // Regular shortcuts (no Alt key)
     switch (key) {
       // Main Navigation
-      case 'h': navigateTo('/dashboard', 'Dashboard (Home)'); break;
-      case 'p': navigateTo('/patients', 'Patients'); break;
-      case 'r': navigateTo('/reports', 'Reports'); break;
-      case 'z': setIsAltMode(true); showShortcutToast('Test Selection Mode - Active for 2 seconds'); break;
-
-      // Quick Actions
-      case '/': handleSearchShortcut(); break;
-      case 'n': handleQuickPatientReg(); break;
-      case '?': showHelpToast(); break;
-
-      // Form Navigation
-      case 'tab': 
-        if (event.shiftKey) {
-          // Focus previous input
-          const prevInput = document.querySelector('input:focus')?.previousElementSibling as HTMLElement;
-          if (prevInput) prevInput.focus();
-        } else {
-          // Focus next input
-          const nextInput = document.querySelector('input:focus')?.nextElementSibling as HTMLElement;
-          if (nextInput) nextInput.focus();
-        }
-        break;
-
-      // Main Navigation
       case 'd': navigateTo('/dashboard', 'Dashboard'); break;
       case 'p': navigateTo('/patients', 'Patients'); break;
       case 'r': navigateTo('/reports', 'Reports'); break;
 
       // Test Navigation
-      case 'c': navigateTo('/tests/cbc', 'CBC Test'); break;
-      case 'l': navigateTo('/tests/lft', 'LFT Test'); break;
-      case 't': navigateTo('/tests/thyroid', 'Thyroid Test'); break;
-      case 'u': navigateTo('/tests/urine', 'Urine Analysis'); break;
-      case 'b': navigateTo('/tests/blood-group', 'Blood Group Test'); break;
+      case 't': navigateTo('/tests', 'Tests'); break;
+      case 'l': navigateTo('/labs', 'Labs'); break;
 
-      // Quick Actions
-      case 's': { // Save functionality
-        const saveButton = document.querySelector('button[type="submit"], button:contains("Save")') as HTMLButtonElement;
-        if (saveButton) {
-          saveButton.click();
-          showShortcutToast('Saving...');
-        }
-        break;
-      }
+      // Shortcuts & actions
+      case 'n': handleQuickPatientReg(); break;
+      case 'P': handlePrintShortcut(); break;
       case '/': handleSearchShortcut(); break;
 
-      // Help System
+      // Help / misc
       case '?': showHelpToast(); break;
+
+      default:
+        break;
     }
   }, [setLocation, toast, altModeTimer, navigateTo, handlePrintShortcut, handleSearchShortcut, handleQuickPatientReg, showShortcutToast]);
 

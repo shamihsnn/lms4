@@ -41,6 +41,7 @@ import HBsAgTest from "@/pages/tests/hbsag";
 import BetaHCGUrineTest from "@/pages/tests/beta-hcg-urine";
 import BetaHCGBloodTest from "@/pages/tests/beta-hcg-blood";
 import HPyloriStoolAntigenTest from "@/pages/tests/h-pylori-stool-antigen";
+import HPyloriBloodQualTest from "@/pages/tests/h-pylori-blood-qual";
 import HPyloriAntibodiesTest from "@/pages/tests/h-pylori-antibodies";
 import BileSaltsTest from "@/pages/tests/bile-salts";
 import ASOTTest from "@/pages/tests/asot";
@@ -110,6 +111,7 @@ function AppContent() {
           <Route path="/tests/beta-hcg-urine" component={BetaHCGUrineTest} />
           <Route path="/tests/beta-hcg-blood" component={BetaHCGBloodTest} />
           <Route path="/tests/h-pylori-stool-antigen" component={HPyloriStoolAntigenTest} />
+          <Route path="/tests/h-pylori-blood-qual" component={HPyloriBloodQualTest} />
           <Route path="/tests/h-pylori-antibodies" component={HPyloriAntibodiesTest} />
           <Route path="/tests/custom-builder" component={CustomBuilder} />
           <Route component={NotFound} />

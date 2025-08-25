@@ -14,6 +14,7 @@ import EditIdModal from "@/components/modals/edit-id-modal";
 import type { Patient, InsertTestPayload } from "@shared/schema";
 import { useEditableRanges } from "@/hooks/use-editable-ranges";
 import { EditableParameterRow } from "@/components/ui/editable-parameter-row";
+import { Footer } from "@/components/ui/footer";
 
 export const lipidParameters = [
 	{
@@ -274,13 +275,13 @@ export default function LipidTest() {
 	};
 
 	return (
-		<div className="p-8">
+		<div className="p-8 min-h-screen flex flex-col">
 			<div className="mb-8">
 				<h1 className="text-2xl font-bold text-slate-800">Lipid Profile - Cholesterol Analysis</h1>
 				<p className="text-slate-600">Comprehensive cholesterol and lipid analysis</p>
 			</div>
 
-			<Card>
+			<Card className="flex-1">
 				<CardHeader>
 					<CardTitle>New Lipid Profile Test</CardTitle>
 				</CardHeader>
@@ -416,6 +417,8 @@ export default function LipidTest() {
 				idType="Test"
 				onUpdate={handleIdUpdate}
 			/>
+
+			<Footer />
 		</div>
 	);
 }

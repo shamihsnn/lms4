@@ -17,6 +17,7 @@ import {
   FlaskConical
 } from "lucide-react";
 import Logo from "@/components/brand/logo";
+import { Footer } from "@/components/ui/footer";
 
 interface DashboardStats {
   todayTests: number;
@@ -91,96 +92,100 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-8">
-      {/* Welcome Header */}
-      <div className="mb-8 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Welcome to AL-QASIM Clinic & Lab</h1>
-          <p className="text-slate-600">Here's what's happening in your lab today.</p>
+    <div className="min-h-screen flex flex-col">
+      <div className="p-8 flex-grow">
+        {/* Welcome Header */}
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Welcome to AL-QASIM Clinic & Lab</h1>
+            <p className="text-slate-600">Here's what's happening in your lab today.</p>
+          </div>
+          <Logo className="h-12 w-auto hidden sm:block" />
         </div>
-        <Logo className="h-12 w-auto hidden sm:block" />
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Today's Tests</p>
-                <p className="text-2xl font-bold text-slate-800">{stats?.todayTests || 0}</p>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Today's Tests</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats?.todayTests || 0}</p>
+                </div>
+                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
               </div>
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Total Patients</p>
-                <p className="text-2xl font-bold text-slate-800">{stats?.totalPatients || 0}</p>
+          <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Total Patients</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats?.totalPatients || 0}</p>
+                </div>
+                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
               </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Pending Reports</p>
-                <p className="text-2xl font-bold text-slate-800">{stats?.pendingReports || 0}</p>
+          <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Pending Reports</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats?.pendingReports || 0}</p>
+                </div>
+                <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-yellow-600" />
+                </div>
               </div>
-              <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Critical Results</p>
-                <p className="text-2xl font-bold text-slate-800">{stats?.criticalResults || 0}</p>
+          <Card className="bg-white rounded-xl shadow-sm border border-slate-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Critical Results</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats?.criticalResults || 0}</p>
+                </div>
+                <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
               </div>
-              <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Test Type Navigation */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-slate-800 mb-4">Test Management</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {testTypes.map((test) => (
-            <Link key={test.name} href={test.href}>
-              <Card className="bg-white border border-slate-200 hover:border-[var(--medical-primary)] hover:shadow-md transition-all cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-3">
-                    <div className={`h-10 w-10 ${test.color} rounded-lg flex items-center justify-center`}>
-                      <test.icon className="h-6 w-6" />
+        {/* Test Type Navigation */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Test Management</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {testTypes.map((test) => (
+              <Link key={test.name} href={test.href}>
+                <Card className="bg-white border border-slate-200 hover:border-[var(--medical-primary)] hover:shadow-md transition-all cursor-pointer">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-3">
+                      <div className={`h-10 w-10 ${test.color} rounded-lg flex items-center justify-center`}>
+                        <test.icon className="h-6 w-6" />
+                      </div>
+                      <h3 className="ml-3 font-semibold text-slate-800">{test.name}</h3>
                     </div>
-                    <h3 className="ml-3 font-semibold text-slate-800">{test.name}</h3>
-                  </div>
-                  <p className="text-sm text-slate-600">{test.description}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    <p className="text-sm text-slate-600">{test.description}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

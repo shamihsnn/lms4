@@ -63,6 +63,7 @@ const testNavigation = [
   { name: "Beta hCG (Urine)", href: "/tests/beta-hcg-urine", icon: Thermometer },
   { name: "Beta hCG (Blood)", href: "/tests/beta-hcg-blood", icon: Thermometer },
   { name: "H. pylori Stool Ag", href: "/tests/h-pylori-stool-antigen", icon: FlaskConical },
+  { name: "H. pylori (Blood)", href: "/tests/h-pylori-blood-qual", icon: FlaskConical },
   { name: "H. pylori Antibodies", href: "/tests/h-pylori-antibodies", icon: FlaskConical },
   { name: "Custom Builder", href: "/tests/custom-builder", icon: FlaskConical },
 ];

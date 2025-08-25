@@ -20,6 +20,7 @@ export const coagulationParameters = [
   { name: "aptt", label: "Activated Partial Thromboplastin Time (aPTT)", unit: "sec", normalRange: "28-40" },
   { name: "bleedingTime", label: "Bleeding Time", unit: "min", normalRange: "2-7" },
   { name: "clottingTime", label: "Clotting Time", unit: "min", normalRange: "5-10" },
+  { name: "esr", label: "ESR (Erythrocyte Sedimentation Rate)", unit: "mm/hr", normalRange: "Men: 0-15; Women: 0-20; Children: 0-10" },
 ];
 
 export default function CoagulationTest() {
@@ -68,13 +69,29 @@ export default function CoagulationTest() {
       return;
     }
 
+    // Helper to compute ESR normal range per patient
+    const getEsrInfo = (pat?: Patient) => {
+      if (!pat) return { label: "Men: 0-15; Women: 0-20; Children: 0-10", min: undefined as number | undefined, max: undefined as number | undefined };
+      const age = pat.age ?? undefined;
+      const g = (pat.gender || "").toLowerCase();
+      const isChild = typeof age === "number" && age < 18;
+      if (isChild) return { label: "Children: 0-10", min: 0, max: 10 };
+      if (g.startsWith("m")) return { label: "Men: 0-15", min: 0, max: 15 };
+      if (g.startsWith("f")) return { label: "Women: 0-20", min: 0, max: 20 };
+      return { label: "Men: 0-15; Women: 0-20; Children: 0-10", min: undefined, max: undefined };
+    };
+
+    const esr = getEsrInfo(patient);
+
     const flags: Record<string, string> = {};
     coagulationParameters.forEach((p) => {
       const raw = formData.results[p.name];
       if (raw === undefined || raw === "") return;
       const value = parseFloat(raw);
       if (isNaN(value)) return;
-      if (p.normalRange.includes("-")) {
+      if (p.name === "esr" && esr.min !== undefined && esr.max !== undefined) {
+        flags[p.name] = value < esr.min ? "LOW" : value > esr.max ? "HIGH" : "NORMAL";
+      } else if (p.normalRange.includes("-")) {
         const [min, max] = p.normalRange.split("-").map(parseFloat);
         flags[p.name] = value < min ? "LOW" : value > max ? "HIGH" : "NORMAL";
       } else {
@@ -83,7 +100,13 @@ export default function CoagulationTest() {
     });
 
     const normalRanges: Record<string, string> = {};
-    coagulationParameters.forEach((p) => (normalRanges[p.name] = `${p.normalRange} ${p.unit}`.trim()));
+    coagulationParameters.forEach((p) => {
+      if (p.name === "esr") {
+        normalRanges[p.name] = `${esr.label} ${p.unit}`.trim();
+      } else {
+        normalRanges[p.name] = `${p.normalRange} ${p.unit}`.trim();
+      }
+    });
 
     try {
       await createTestMutation.mutateAsync({
@@ -108,14 +131,29 @@ export default function CoagulationTest() {
 
   const handlePrint = () => {
     const patient = patients.find((p) => p.patientId === formData.patientId);
+    const getEsrInfo = (pat?: Patient) => {
+      if (!pat) return { label: "Men: 0-15; Women: 0-20; Children: 0-10", min: undefined as number | undefined, max: undefined as number | undefined };
+      const age = pat.age ?? undefined;
+      const g = (pat.gender || "").toLowerCase();
+      const isChild = typeof age === "number" && age < 18;
+      if (isChild) return { label: "Children: 0-10", min: 0, max: 10 };
+      if (g.startsWith("m")) return { label: "Men: 0-15", min: 0, max: 15 };
+      if (g.startsWith("f")) return { label: "Women: 0-20", min: 0, max: 20 };
+      return { label: "Men: 0-15; Women: 0-20; Children: 0-10", min: undefined, max: undefined };
+    };
+    const esr = getEsrInfo(patient);
     const rows: ReportRow[] = coagulationParameters.map((p) => ({
       parameterLabel: p.label,
       value: formData.results[p.name] || "",
       unit: p.unit,
-      normalRange: `${p.normalRange} ${p.unit}`.trim(),
+      normalRange: (p.name === "esr" ? `${esr.label} ${p.unit}` : `${p.normalRange} ${p.unit}`).trim(),
       flag: (() => {
         const v = parseFloat(formData.results[p.name] || "");
-        if (isNaN(v) || !p.normalRange.includes("-")) return "";
+        if (isNaN(v)) return "";
+        if (p.name === "esr" && esr.min !== undefined && esr.max !== undefined) {
+          return v < esr.min ? "LOW" : v > esr.max ? "HIGH" : "NORMAL";
+        }
+        if (!p.normalRange.includes("-")) return "";
         const [min, max] = p.normalRange.split("-").map(parseFloat);
         return v < min ? "LOW" : v > max ? "HIGH" : "NORMAL";
       })(),
@@ -172,25 +210,39 @@ export default function CoagulationTest() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {coagulationParameters.map((param) => (
-                <div key={param.name}>
-                  <Label className="block text-sm font-medium text-slate-700 mb-2">{param.label}</Label>
-                  <div className="flex">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.results[param.name] || ""}
-                      onChange={(e) => handleResultChange(param.name, e.target.value)}
-                      className="flex-1 rounded-r-none"
-                      placeholder={param.normalRange}
-                    />
-                    {param.unit && (
-                      <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">{param.unit}</span>
-                    )}
+              {coagulationParameters.map((param) => {
+                const pat = patients.find((p) => p.patientId === formData.patientId);
+                const esr = (() => {
+                  if (param.name !== "esr") return null as null | { label: string };
+                  const age = pat?.age ?? undefined;
+                  const g = ((pat?.gender as string) || "").toLowerCase();
+                  const isChild = typeof age === "number" && age < 18;
+                  if (isChild) return { label: "Children: 0-10" };
+                  if (g.startsWith("m")) return { label: "Men: 0-15" };
+                  if (g.startsWith("f")) return { label: "Women: 0-20" };
+                  return { label: "Men: 0-15; Women: 0-20; Children: 0-10" };
+                })();
+                const normalText = param.name === "esr" ? esr!.label : param.normalRange;
+                return (
+                  <div key={param.name}>
+                    <Label className="block text-sm font-medium text-slate-700 mb-2">{param.label}</Label>
+                    <div className="flex">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formData.results[param.name] || ""}
+                        onChange={(e) => handleResultChange(param.name, e.target.value)}
+                        className="flex-1 rounded-r-none"
+                        placeholder={normalText}
+                      />
+                      {param.unit && (
+                        <span className="px-3 py-2 bg-slate-50 border border-l-0 border-slate-300 rounded-r-lg text-sm text-slate-600">{param.unit}</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">Normal: {normalText} {param.unit}</p>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">Normal: {param.normalRange} {param.unit}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div>
